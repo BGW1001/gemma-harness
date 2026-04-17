@@ -1,0 +1,13 @@
+[project]
+name = "gemma-harness"
+version = "0.1.0"
+description = "Gemma harness framework for Terminal-Bench optimization"
+requires-python = ">=3.11"
+dependencies = [
+  "openai>=1.0.0",
+  "pyyaml>=6.0",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"

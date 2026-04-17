@@ -1,0 +1,4 @@
+max_turns: 40
+temperature: 0.2
+max_tokens_per_call: 2048
+best_of_n: 1

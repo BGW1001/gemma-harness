@@ -37,8 +37,8 @@ class GemmaAgent(BaseAgent):
             # Fallback default
             config = {"max_turns": 30, "temperature": 0.0, "max_tokens_per_call": 1024}
 
-        # Terminal-Bench tasks usually happen in /workspace
-        cwd = "/workspace" 
+        # Let Harbor's BaseEnvironment determine the default working directory
+        cwd = None 
         
         result = await run_agent(instruction, environment, cwd, config)
         

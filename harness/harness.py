@@ -4,13 +4,13 @@ from harness.tools import TOOL_SCHEMAS, execute
 from prompts import SYSTEM_PROMPT
 
 
-def run(task, cwd, config):
+async def run_agent(task, environment, cwd, config):
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": task},
     ]
     for turn in range(config["max_turns"]):
-        resp = chat(
+        resp = await chat(
             messages, tools=TOOL_SCHEMAS,
             temperature=config["temperature"],
             max_tokens=config["max_tokens_per_call"],
@@ -23,7 +23,7 @@ def run(task, cwd, config):
 
         for tc in (msg.tool_calls or []):
             args = json.loads(tc.function.arguments)
-            result = execute(tc.function.name, args, cwd)
+            result = await execute(tc.function.name, args, environment, cwd)
             messages.append({
                 "role": "tool",
                 "tool_call_id": tc.id,

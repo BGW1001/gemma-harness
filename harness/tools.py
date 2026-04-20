@@ -1,26 +1,6 @@
-"""
-Tool schemas and implementations for the Gemma harness.
-
-Phase 1 tools:
-  - bash(cmd)           — run a shell command in cwd
-  - file_view(path)     — read a file
-  - file_edit(path, old_text, new_text) — exact-match replace
-  - grep(pattern, path) — search for pattern in files
-
-Safety:
-  - file operations are restricted to within cwd
-  - bash runs in cwd with a 30s timeout
-"""
-
 import json
 import os
 import re
-import subprocess
-from pathlib import Path
-
-# ---------------------------------------------------------------------------
-# OpenAI tool schemas
-# ---------------------------------------------------------------------------
 
 TOOL_SCHEMAS = [
     {
@@ -98,108 +78,100 @@ TOOL_SCHEMAS = [
     },
 ]
 
-# ---------------------------------------------------------------------------
-# Safety helpers
-# ---------------------------------------------------------------------------
-
-def _safe_path(raw_path: str, cwd: str) -> Path:
-    """Resolve path and ensure it stays inside cwd."""
-    base = Path(cwd).resolve()
-    target = (base / raw_path).resolve()
-    if not str(target).startswith(str(base)):
-        raise ValueError(f"Path escape attempt: {raw_path!r} resolves outside cwd {cwd!r}")
-    return target
-
-# ---------------------------------------------------------------------------
-# Tool implementations
-# ---------------------------------------------------------------------------
-
-def _bash(args: dict, cwd: str) -> dict:
+async def _bash(args: dict, environment, cwd: str) -> dict:
     cmd = args["cmd"]
     try:
-        result = subprocess.run(
+        # We assume `environment` is a Harbor BaseEnvironment
+        # If it's none, we are running in local mode (not supported anymore)
+        result = await environment.exec(
             cmd,
-            shell=True,
             cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=30,
+            timeout_sec=30,
         )
         return {
             "stdout": result.stdout,
             "stderr": result.stderr,
-            "returncode": result.returncode,
+            "returncode": result.return_code,
         }
-    except subprocess.TimeoutExpired:
-        return {"error": "Command timed out after 30 seconds", "returncode": -1}
     except Exception as e:
         return {"error": str(e), "returncode": -1}
 
-
-def _file_view(args: dict, cwd: str) -> dict:
+async def _file_view(args: dict, environment, cwd: str) -> dict:
     try:
-        path = _safe_path(args["path"], cwd)
-        if not path.exists():
-            return {"error": f"File not found: {args['path']}"}
-        if not path.is_file():
-            return {"error": f"Not a file: {args['path']}"}
-        content = path.read_text(errors="replace")
+        path = args["path"]
+        # Use exec to cat the file since BaseEnvironment doesn't have read_file
+        result = await environment.exec(f"cat {path}", cwd=cwd)
+        if result.return_code != 0:
+            return {"error": f"File not found or error reading: {result.stderr}"}
+        content = result.stdout or ""
         return {"content": content, "lines": content.count("\n") + 1}
-    except ValueError as e:
-        return {"error": str(e)}
     except Exception as e:
         return {"error": str(e)}
 
-
-def _file_edit(args: dict, cwd: str) -> dict:
+async def _file_edit(args: dict, environment, cwd: str) -> dict:
     try:
-        path = _safe_path(args["path"], cwd)
+        path = args["path"]
         old_text = args["old_text"]
         new_text = args["new_text"]
-        if not path.exists():
-            return {"error": f"File not found: {args['path']}"}
-        content = path.read_text(errors="replace")
+        
+        # Read the file first
+        read_res = await environment.exec(f"cat {path}", cwd=cwd)
+        if read_res.return_code != 0:
+            return {"error": f"File not found or error reading: {read_res.stderr}"}
+        
+        content = read_res.stdout or ""
         count = content.count(old_text)
         if count == 0:
             return {"error": "old_text not found in file"}
         if count > 1:
             return {"error": f"old_text found {count} times — must be unique"}
+            
         new_content = content.replace(old_text, new_text, 1)
-        path.write_text(new_content)
-        return {"ok": True, "path": str(path)}
-    except ValueError as e:
-        return {"error": str(e)}
+        
+        # Write back - we need to be careful with quotes, so maybe upload a file
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", delete=False) as f:
+            f.write(new_content)
+            temp_path = f.name
+            
+        # upload_file(source_path, target_path)
+        # However, target_path needs to be absolute or relative to environment.
+        # Harbor's upload_file uses absolute paths inside the container, or we can use exec with base64.
+        import base64
+        b64_content = base64.b64encode(new_content.encode("utf-8")).decode("utf-8")
+        write_res = await environment.exec(f"echo '{b64_content}' | base64 -d > {path}", cwd=cwd)
+        
+        os.unlink(temp_path)
+        
+        if write_res.return_code != 0:
+            return {"error": f"Error writing file: {write_res.stderr}"}
+            
+        return {"ok": True, "path": path}
     except Exception as e:
         return {"error": str(e)}
 
-
-def _grep(args: dict, cwd: str) -> dict:
+async def _grep(args: dict, environment, cwd: str) -> dict:
     pattern = args["pattern"]
     search_path = args.get("path", ".")
     try:
-        safe = _safe_path(search_path, cwd)
-        result = subprocess.run(
-            ["grep", "-rn", "--include=*", pattern, str(safe)],
-            capture_output=True,
-            text=True,
-            timeout=15,
+        # Escape pattern single quotes
+        safe_pattern = pattern.replace("'", "'\\''")
+        result = await environment.exec(
+            f"grep -rn --include=* '{safe_pattern}' {search_path}",
+            cwd=cwd,
+            timeout_sec=15,
         )
-        matches = result.stdout.strip().splitlines()
+        # grep returns 1 if no lines selected, which is fine
+        if result.return_code not in (0, 1):
+             return {"error": f"grep error: {result.stderr}"}
+             
+        matches = (result.stdout or "").strip().splitlines()
         return {
             "matches": matches,
             "count": len(matches),
         }
-    except ValueError as e:
-        return {"error": str(e)}
-    except subprocess.TimeoutExpired:
-        return {"error": "grep timed out"}
     except Exception as e:
         return {"error": str(e)}
-
-
-# ---------------------------------------------------------------------------
-# Dispatch
-# ---------------------------------------------------------------------------
 
 _TOOLS = {
     "bash": _bash,
@@ -208,8 +180,7 @@ _TOOLS = {
     "grep": _grep,
 }
 
-
-def execute(name: str, args: dict, cwd: str) -> dict:
+async def execute(name: str, args: dict, environment, cwd: str) -> dict:
     if name not in _TOOLS:
         return {"error": f"Unknown tool: {name!r}"}
-    return _TOOLS[name](args, cwd)
+    return await _TOOLS[name](args, environment, cwd)

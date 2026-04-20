@@ -250,7 +250,7 @@ The optimizer in `optimizer/` is not yet wired to drive the inner loop; the same
 
 ## 8. The openclaw agent layer
 
-The repo is the execution surface. The openclaw agent folder is the **evidence bank and operating contract** — what survives across iterations, what gets remembered, what gets actively avoided.
+**Status: built; only partially exercised.** The repo is the execution surface. The openclaw agent folder is the **evidence bank and operating contract** — what survives across iterations, what gets remembered, and what gets actively avoided.
 
 Location: `~/.openclaw/workspace/agents/gemma-agent/`
 
@@ -308,8 +308,8 @@ Without this loop, AutoResearch re-discovers the same failures repeatedly and th
 | Editable artifact surface (prompts / skills / policies / compose) | Built, **not yet validated** |
 | `EASY_SUBSET` usefulness as calibration set | Proposed, **pending validation** |
 | Non-zero score on any Terminal-Bench 2 task | **Not yet achieved** |
-| Ledger recorder (`prompt_hash`, `failure_tag`) | Built; validated by dry-run on the MIPS job |
-| OpenClaw `gemma-agent` folder + self-improvement loop | Built; loop not yet exercised |
+| Ledger recorder (`prompt_hash`, `failure_tag`) | Built; exercised on the MIPS job |
+| OpenClaw `gemma-agent` folder + self-improvement loop | Built; structure in place, loop not yet exercised |
 | AutoResearch optimizer wired to drive iterations | **Not yet wired** |
 
 ### The one measurement we have
@@ -317,7 +317,7 @@ Without this loop, AutoResearch re-discovers the same failures repeatedly and th
 - Pre-artifact-surface baseline: `prompt_hash 04b78e2f98880b07` (the old one-liner system prompt) → 0.00 on `make-mips-interpreter`, tagged `graceful_giveup`, 20 of 40 turns used
 - Any score under the new composed `SYSTEM_PROMPT`: not yet measured. The next baseline run is the first time the new surface is tested against reality.
 
-### Built today (2026-04-20), awaiting validation
+### Recently built, awaiting validation
 
 - `prompts/system.md`, `skills/plan.md`, `policies/stop-loops.md`, `policies/submit-early.md`
 - `prompts.py` rewritten to compose from the markdown

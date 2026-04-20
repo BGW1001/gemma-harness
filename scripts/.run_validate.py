@@ -1,12 +1,3 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-# This script runs the validation subset directly and logs output.
-
-echo "Running validation..."
-cd "$(dirname "$0")/.."
-
-cat << 'EOF' > scripts/.run_validate.py
 import sys
 import yaml
 from pathlib import Path
@@ -29,7 +20,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-EOF
-
-python3 scripts/.run_validate.py
-rm -f scripts/.run_validate.py

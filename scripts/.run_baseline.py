@@ -1,12 +1,3 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-# This script runs the baseline 3 times and writes to the ledger.
-
-echo "Running 3x baseline..."
-cd "$(dirname "$0")/.."
-
-cat << 'EOF' > scripts/.run_baseline.py
 import sys
 import yaml
 from pathlib import Path
@@ -40,7 +31,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-EOF
-
-python3 scripts/.run_baseline.py
-rm -f scripts/.run_baseline.py

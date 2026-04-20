@@ -1,0 +1,36 @@
+Running validation...
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+Executed bash -> return code 0
+  1/1 Mean: 0.000 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0:05:44 0:00:00
+terminal-bench/terminal-bench-2 • gemma-harness
+┏━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━┓
+┃ Trials ┃ Exceptions ┃  Mean ┃
+┡━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━┩
+│      0 │          1 │ 0.000 │
+└────────┴────────────┴───────┘
+
+┏━━━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Exception       ┃ Count ┃
+┡━━━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ BadRequestError │     1 │
+└─────────────────┴───────┘
+
+Job Info
+Total runtime: 5m 54s
+Results written to jobs/2026-04-20__12-27-20/result.json
+Inspect results by running `harbor view jobs`
+
+Validation complete.

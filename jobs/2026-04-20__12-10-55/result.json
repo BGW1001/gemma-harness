@@ -1,0 +1,30 @@
+{
+    "id": "fd036070-eb92-4160-a3ba-81bce5783a3d",
+    "started_at": "2026-04-20T12:10:58.285055",
+    "finished_at": "2026-04-20T12:12:53.590274",
+    "n_total_trials": 1,
+    "stats": {
+        "n_trials": 1,
+        "n_errors": 0,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 1,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "mean": 0.0
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "make-mips-interpreter__EvvAZQT"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        }
+    }
+}

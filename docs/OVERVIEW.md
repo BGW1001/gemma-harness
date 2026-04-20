@@ -2,7 +2,15 @@
 
 Canonical reference for the project end-to-end. Start here; drill into progress notes and handoffs for point-in-time state.
 
-Last updated: 2026-04-20.
+Last updated: 2026-04-21.
+
+**Reading convention used throughout this doc:**
+
+- **Validated** — implemented *and* demonstrated to work with evidence in the repo
+- **Built** — implemented but not yet empirically validated
+- **Intended** — designed / next-step architecture, not yet built
+
+Each section flags which of these it is describing. If a claim is not flagged, assume the weakest applicable category (usually "built").
 
 ---
 
@@ -95,17 +103,19 @@ The split is deliberate and load-bearing.
 
 ## 4. The agent loop
 
+**Status: validated.** The loop below has been exercised end-to-end against Terminal-Bench 2, most recently on the MIPS trial (job `2026-04-20__12-34-11`).
+
 In `harness/harness.py`, `run_agent` does the following for each trial:
 
 1. Seed `messages` with the composed `SYSTEM_PROMPT` (system role) and the task instruction (user role).
 2. For up to `config.max_turns`:
    - Call the llama.cpp chat endpoint with the current `messages` and tool schemas
-   - If `finish_reason == "stop"` → return success
+   - If `finish_reason == "stop"` → **the inner loop ends and returns control to Harbor.** This is *not* task success. Task success is determined only by the Harbor verifier reward in step 3.
    - Strip `reasoning_content` from the assistant message (llama.cpp rejects history that carries it — a server-side quirk with thinking mode), then append the message
    - Execute every emitted tool call against the Harbor task environment and append the result as a `tool` message
 3. On turn limit, return `status="turn_limit"`.
 
-Harbor then runs the task's verifier over the container state and emits a reward in `[0, 1]`.
+Harbor then runs the task's verifier over the container state and emits a reward in `[0, 1]`. **That reward is the only signal of task success.**
 
 ### Tools Gemma has
 
@@ -121,6 +131,8 @@ Four orthogonal tools. Keeping this set minimal is intentional; each tool descri
 ---
 
 ## 5. The editable-artifact surface in detail
+
+**Status: built; not yet empirically validated.** The surface below is implemented as the intended search/control layer for AutoResearch. Whether these specific artifacts change outcomes on Terminal-Bench 2 is not yet measured. The next baseline run under the new composed `prompt_hash` is the first test of whether the surface produces any signal at all. Until that run completes and is logged in `runs/ledger.jsonl`, treat this section as a design contract, not a validated lever.
 
 ### `prompts/system.md`
 
@@ -191,6 +203,8 @@ Without these two fields the ledger is a list of numbers with no way to say "thi
 
 ### Subsets
 
+**Status: proposed; pending empirical validation.**
+
 `eval/subsets.py` exposes `EASY_SUBSET`:
 
 ```python
@@ -201,7 +215,9 @@ EASY_SUBSET = [
 ]
 ```
 
-These are chosen to be at the procedural end of Terminal-Bench 2 — well within Gemma's plausible ceiling. **Calibrating on tasks the model cannot solve is noise.** Widen the subset only after the baseline on EASY_SUBSET is reproducibly non-zero.
+The picks were chosen because their reference solutions are short and procedural, which makes them *plausibly* within Gemma's ceiling. Whether this subset actually produces useful score variation for Gemma — rather than three zeros — is the hypothesis the next baseline run tests.
+
+The working rule (don't calibrate on tasks the model can't solve) stands on its own merits; the specific three tasks remain provisional until at least one of them scores non-zero. If all three still zero out, the first response is to inspect trajectories before changing the subset.
 
 ---
 
@@ -275,24 +291,38 @@ Without this loop, AutoResearch re-discovers the same failures repeatedly and th
 
 ## 9. Current state (2026-04-20)
 
-### Proven
+**Blunt summary:** the harness is infrastructure-ready but **not yet benchmark-competitive**. The first meaningful post-fix validation run completed successfully end-to-end — and still scored 0.0. The project's current bottleneck is agent performance, not infrastructure.
 
-- Harbor runs on the machine; Terminal-Bench 2 dataset path is `terminal-bench/terminal-bench-2`
-- The oracle agent scores 1.000 on terminal-bench-2 — Harbor + Docker + registry + verifier all work
-- `gemma-harness` runs as a real Harbor BaseAgent; the Harbor `cwd` and `reasoning_content` bugs are both fixed
-- A full trial completes end-to-end with real tool execution
+### Status table
 
-### Measured
+| Item | Status |
+|---|---|
+| Harbor install + CLI | Validated |
+| Terminal-Bench 2 dataset path (`terminal-bench/terminal-bench-2`) | Validated |
+| Docker-backed Harbor task execution | Validated |
+| Oracle agent on terminal-bench-2 (score = 1.000) | Validated |
+| `gemma-harness` as Harbor BaseAgent | Validated |
+| Tool execution inside task container | Validated |
+| Multi-turn agent loop stability (after `cwd` + `reasoning_content` fixes) | Validated |
+| Pre-change baseline score (`prompt_hash 04b78e2f`, `make-mips-interpreter`) | Validated = 0.00, tag `graceful_giveup` |
+| Editable artifact surface (prompts / skills / policies / compose) | Built, **not yet validated** |
+| `EASY_SUBSET` usefulness as calibration set | Proposed, **pending validation** |
+| Non-zero score on any Terminal-Bench 2 task | **Not yet achieved** |
+| Ledger recorder (`prompt_hash`, `failure_tag`) | Built; validated by dry-run on the MIPS job |
+| OpenClaw `gemma-agent` folder + self-improvement loop | Built; loop not yet exercised |
+| AutoResearch optimizer wired to drive iterations | **Not yet wired** |
 
-- Pre-artifact-surface baseline (`prompt_hash = 04b78e2f98880b07`, the old one-liner system prompt): 0.00 on `make-mips-interpreter`, tagged `graceful_giveup`, 20 turns of 40 used
-- No score yet measured under the new composed `SYSTEM_PROMPT` — baseline run is the next action
+### The one measurement we have
 
-### Built today
+- Pre-artifact-surface baseline: `prompt_hash 04b78e2f98880b07` (the old one-liner system prompt) → 0.00 on `make-mips-interpreter`, tagged `graceful_giveup`, 20 of 40 turns used
+- Any score under the new composed `SYSTEM_PROMPT`: not yet measured. The next baseline run is the first time the new surface is tested against reality.
+
+### Built today (2026-04-20), awaiting validation
 
 - `prompts/system.md`, `skills/plan.md`, `policies/stop-loops.md`, `policies/submit-early.md`
 - `prompts.py` rewritten to compose from the markdown
 - `eval/subsets.py` populated with `EASY_SUBSET`
-- `scripts/baseline.sh` rewritten + `scripts/record_baseline.py` added
+- `scripts/baseline.sh` rewritten + `scripts/record_baseline.py` added (recorder dry-run verified)
 - `~/.openclaw/workspace/agents/gemma-agent/` initialized with the full openclaw template
 - Registry entry + handoff note + progress note
 

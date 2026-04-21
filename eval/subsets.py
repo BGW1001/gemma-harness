@@ -11,9 +11,9 @@
 #   - No compiler / interpreter / kernel authoring required
 
 EASY_SUBSET = [
-    "fix-git",                  # 7-line solution: reflog + checkout + merge
-    "openssl-selfsigned-cert",  # ~98-line procedural recipe: openssl commands
-    "git-leak-recovery",        # moderate but well-scoped: find secret, clean repo
+    "terminal-bench/fix-git",                  # 7-line solution: reflog + checkout + merge
+    "terminal-bench/openssl-selfsigned-cert",  # ~98-line procedural recipe: openssl commands
+    "terminal-bench/sanitize-git-repo",        # moderate but well-scoped: find secret, clean repo
 ]
 
 # Retained for compatibility.

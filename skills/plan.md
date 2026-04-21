@@ -10,14 +10,14 @@
    - Any forbidden commands or constraints
    If any of these are ambiguous, write your best interpretation as an assumption and continue.
 
-2. **Decompose into 3–7 concrete steps.** Each step must:
+2. **Decompose into 3–6 concrete steps.** Each step must:
    - Name a specific file, command, or check
    - Have an observable outcome (a file exists, a command exits 0, output contains X)
    - Be cheap enough to execute in 1–3 turns
 
 3. **Order by dependency and value.** Do the step that unlocks the most later work first. If two steps are independent, do the one that writes the required artifact first.
 
-4. **Write the plan to `content` in your next message.** Verbatim, numbered list. Repeat this list at the top of every subsequent assistant message until you revise it.
+4. **Write the plan once near the start of the run.** Re-state it only when it changed, when you are stuck, or when doing so materially helps you reason.
 
 ## Revision triggers
 
@@ -29,5 +29,6 @@ Revise the plan (and say why in one sentence) when:
 ## Anti-patterns
 
 - Plans that start with "understand X" or "explore X" without an observable outcome
-- Plans longer than 7 steps — decompose later
+- Plans longer than 6 steps — decompose later
 - Plans that don't name the files the grader checks
+- Repeating the full plan mechanically every turn

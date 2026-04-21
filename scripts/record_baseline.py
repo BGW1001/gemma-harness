@@ -12,8 +12,11 @@ Ledger row schema:
   max_turns        — turn budget from config.yaml
   prompt_hash      — sha256(system prompt) — identifies the editable-surface version
   config           — the {temperature, max_tokens_per_call, ...} config.yaml
-  failure_tag      — heuristic: "success" | "partial" | "turn_exhaustion" | "graceful_giveup" | "tool_error_cascade" | "unknown_zero"
+  failure_tag      — heuristic: "success" | "partial" | "malformed_model_output"
+                     | "model_timeout" | "turn_exhaustion" | "graceful_giveup"
+                     | "tool_error_cascade" | "unknown_zero"
   runtime_sec      — wall time
+  drift_count      — number of turns in which protocol-drift markup was sanitized
 
 Usage:
   python scripts/record_baseline.py jobs/<job_name>
@@ -43,12 +46,16 @@ def load_config() -> dict:
     return yaml.safe_load((ROOT / "config.yaml").read_text())
 
 
-def tag_failure(reward: float, turns: int, max_turns: int, trace: list) -> str:
+def tag_failure(reward: float, turns: int, max_turns: int, trace: list, status: str) -> str:
     if reward >= 1.0:
         return "success"
     if reward > 0.0:
         return "partial"
-    # reward == 0
+    # reward == 0 — status from the inner loop takes precedence over heuristics
+    if status == "malformed_model_output":
+        return "malformed_model_output"
+    if status == "model_timeout":
+        return "model_timeout"
     if turns >= max_turns - 1:
         return "turn_exhaustion"
     # Heuristic for graceful giveup: last assistant message has long content + no tool call.
@@ -103,6 +110,8 @@ def record_job(job_dir: Path) -> list[dict]:
         gemma = (result.get("agent_result") or {}).get("metadata", {}).get("gemma_result", {})
         turns = int(gemma.get("turns", 0))
         trace = gemma.get("trace") or []
+        status = gemma.get("status", "")
+        drift_events = gemma.get("drift_events") or []
 
         started = result.get("started_at")
         finished = result.get("finished_at")
@@ -125,8 +134,9 @@ def record_job(job_dir: Path) -> list[dict]:
             "max_turns": max_turns,
             "prompt_hash": phash,
             "config": cfg,
-            "failure_tag": tag_failure(reward, turns, max_turns, trace),
+            "failure_tag": tag_failure(reward, turns, max_turns, trace, status),
             "runtime_sec": runtime_sec,
+            "drift_count": len(drift_events),
         }
         rows.append(row)
     return rows
@@ -156,7 +166,7 @@ def main() -> None:
     for row in rows:
         print(
             f"[record] {row['task_name']:50s} reward={row['reward']:.2f} "
-            f"turns={row['turns']:2d} tag={row['failure_tag']}"
+            f"turns={row['turns']:2d} drift={row['drift_count']} tag={row['failure_tag']}"
         )
 
 

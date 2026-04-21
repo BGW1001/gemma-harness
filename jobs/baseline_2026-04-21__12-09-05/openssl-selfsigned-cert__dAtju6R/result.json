@@ -1,0 +1,106 @@
+{
+    "id": "6b44d84f-bd60-464c-a9c0-195208b631b4",
+    "task_name": "terminal-bench/openssl-selfsigned-cert",
+    "trial_name": "openssl-selfsigned-cert__dAtju6R",
+    "trial_uri": "file:///home/benwa/.openclaw/workspace/gemma-harness/jobs/baseline_2026-04-21__12-09-05/openssl-selfsigned-cert__dAtju6R",
+    "task_id": {
+        "org": "terminal-bench",
+        "name": "openssl-selfsigned-cert",
+        "ref": "sha256:43b288549abe880ce4a3c735f30e746c4440c0159c5411e9ae5aafb547ba2d8c"
+    },
+    "source": "terminal-bench/terminal-bench-2",
+    "task_checksum": "113310ddc7bf5aae3477f5ff21227379d7c44a55705f71a7d326c83d1cc8ea76",
+    "config": {
+        "task": {
+            "path": null,
+            "git_url": null,
+            "git_commit_id": null,
+            "name": "terminal-bench/openssl-selfsigned-cert",
+            "ref": "sha256:43b288549abe880ce4a3c735f30e746c4440c0159c5411e9ae5aafb547ba2d8c",
+            "overwrite": false,
+            "download_dir": null,
+            "source": "terminal-bench/terminal-bench-2"
+        },
+        "trial_name": "openssl-selfsigned-cert__dAtju6R",
+        "trials_dir": "jobs/baseline_2026-04-21__12-09-05",
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": null,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": null,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": null,
+            "import_path": "harness.agent:GemmaAgent",
+            "model_name": null,
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "kwargs": {},
+            "env": {}
+        },
+        "environment": {
+            "type": "docker",
+            "import_path": null,
+            "force_build": false,
+            "delete": true,
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "suppress_override_warnings": false,
+            "mounts_json": null,
+            "env": {},
+            "kwargs": {}
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "env": {},
+            "disable": false
+        },
+        "artifacts": [],
+        "job_id": "54f62aba-d5ab-4be8-a7c1-4e192d705eba"
+    },
+    "agent_info": {
+        "name": "gemma-harness",
+        "version": "0.1.0",
+        "model_info": null
+    },
+    "agent_result": {
+        "n_input_tokens": null,
+        "n_cache_tokens": null,
+        "n_output_tokens": null,
+        "cost_usd": null,
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": {
+        "rewards": {
+            "reward": 0.0
+        }
+    },
+    "exception_info": {
+        "exception_type": "AgentTimeoutError",
+        "exception_message": "Agent execution timed out after 900.0 seconds",
+        "exception_traceback": "Traceback (most recent call last):\n  File \"/home/ben/miniconda3/lib/python3.13/asyncio/tasks.py\", line 507, in wait_for\n    return await fut\n           ^^^^^^^^^\n  File \"/home/benwa/.openclaw/workspace/gemma-harness/harness/agent.py\", line 43, in run\n    result = await run_agent(instruction, environment, cwd, config)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/benwa/.openclaw/workspace/gemma-harness/harness/harness.py\", line 13, in run_agent\n    resp = await chat(\n           ^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/home/benwa/.openclaw/workspace/gemma-harness/harness/client.py\", line 10, in chat\n    return await _client.chat.completions.create(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        model=\"gemma\", messages=messages, tools=tools, **kwargs,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/openai/resources/chat/completions/completions.py\", line 2714, in create\n    return await self._post(\n           ^^^^^^^^^^^^^^^^^\n    ...<49 lines>...\n    )\n    ^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/openai/_base_client.py\", line 1913, in post\n    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/openai/_base_client.py\", line 1630, in request\n    response = await self._send_request(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/openai/_client.py\", line 829, in _send_request\n    return await self._send_with_auth_retry(request, stream=stream, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/openai/_client.py\", line 807, in _send_with_auth_retry\n    response = await super()._send_request(request, stream=stream, **kwargs)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/openai/_base_client.py\", line 1553, in _send_request\n    return await self._client.send(request, stream=stream, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpx/_client.py\", line 1629, in send\n    response = await self._send_handling_auth(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<4 lines>...\n    )\n    ^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpx/_client.py\", line 1657, in _send_handling_auth\n    response = await self._send_handling_redirects(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpx/_client.py\", line 1694, in _send_handling_redirects\n    response = await self._send_single_request(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpx/_client.py\", line 1730, in _send_single_request\n    response = await transport.handle_async_request(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpx/_transports/default.py\", line 394, in handle_async_request\n    resp = await self._pool.handle_async_request(req)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpcore/_async/connection_pool.py\", line 256, in handle_async_request\n    raise exc from None\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpcore/_async/connection_pool.py\", line 236, in handle_async_request\n    response = await connection.handle_async_request(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        pool_request.request\n        ^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpcore/_async/connection.py\", line 103, in handle_async_request\n    return await self._connection.handle_async_request(request)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpcore/_async/http11.py\", line 136, in handle_async_request\n    raise exc\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpcore/_async/http11.py\", line 106, in handle_async_request\n    ) = await self._receive_response_headers(**kwargs)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpcore/_async/http11.py\", line 177, in _receive_response_headers\n    event = await self._receive_event(timeout=timeout)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpcore/_async/http11.py\", line 217, in _receive_event\n    data = await self._network_stream.read(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.READ_NUM_BYTES, timeout=timeout\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/httpcore/_backends/anyio.py\", line 35, in read\n    return await self._stream.receive(max_bytes=max_bytes)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/anyio/_backends/_asyncio.py\", line 1269, in receive\n    await self._protocol.read_event.wait()\n  File \"/home/ben/miniconda3/lib/python3.13/asyncio/locks.py\", line 213, in wait\n    await fut\nasyncio.exceptions.CancelledError\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/harbor/trial/trial.py\", line 285, in _execute_agent\n    await asyncio.wait_for(\n    ...<6 lines>...\n    )\n  File \"/home/ben/miniconda3/lib/python3.13/asyncio/tasks.py\", line 506, in wait_for\n    async with timeouts.timeout(timeout):\n               ~~~~~~~~~~~~~~~~^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/asyncio/timeouts.py\", line 116, in __aexit__\n    raise TimeoutError from exc_val\nTimeoutError\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/harbor/trial/trial.py\", line 547, in run\n    await self._execute_agent()\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/harbor/trial/trial.py\", line 294, in _execute_agent\n    raise AgentTimeoutError(\n        f\"Agent execution timed out after {self._agent_timeout_sec} seconds\"\n    ) from e\nharbor.trial.trial.AgentTimeoutError: Agent execution timed out after 900.0 seconds\n",
+        "occurred_at": "2026-04-21T12:24:47.383147"
+    },
+    "started_at": "2026-04-21T02:09:11.434312Z",
+    "finished_at": "2026-04-21T02:25:05.892730Z",
+    "environment_setup": {
+        "started_at": "2026-04-21T02:09:11.435140Z",
+        "finished_at": "2026-04-21T02:09:21.727106Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-04-21T02:09:21.727146Z",
+        "finished_at": "2026-04-21T02:09:21.727189Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-04-21T02:09:21.727247Z",
+        "finished_at": "2026-04-21T02:24:47.379004Z"
+    },
+    "verifier": {
+        "started_at": "2026-04-21T02:24:47.655685Z",
+        "finished_at": "2026-04-21T02:25:03.385438Z"
+    }
+}

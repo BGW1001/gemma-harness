@@ -6,7 +6,11 @@ _client = AsyncOpenAI(
     api_key="sk-ignored",
 )
 
-async def chat(messages, tools=None, **kwargs):
+async def chat(messages, tools=None, timeout=None, **kwargs):
     return await _client.chat.completions.create(
-        model="gemma", messages=messages, tools=tools, **kwargs,
+        model="gemma",
+        messages=messages,
+        tools=tools,
+        timeout=timeout,
+        **kwargs,
     )

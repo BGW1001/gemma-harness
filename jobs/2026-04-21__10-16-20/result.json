@@ -1,0 +1,30 @@
+{
+    "id": "2d20216a-1b20-472a-a2b3-e31e899898a0",
+    "started_at": "2026-04-21T10:16:23.367618",
+    "finished_at": "2026-04-21T10:17:50.773154",
+    "n_total_trials": 1,
+    "stats": {
+        "n_trials": 1,
+        "n_errors": 0,
+        "evals": {
+            "nop__terminal-bench/terminal-bench-2": {
+                "n_trials": 1,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "mean": 0.0
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "make-mips-interpreter__ayAT55g"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        }
+    }
+}

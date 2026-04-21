@@ -1,0 +1,50 @@
+{
+    "id": "ebdb49b8-425f-46af-b424-986f0b8e1def",
+    "started_at": "2026-04-21T10:38:39.174418",
+    "finished_at": "2026-04-21T11:03:12.538187",
+    "n_total_trials": 9,
+    "stats": {
+        "n_trials": 9,
+        "n_errors": 4,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 6,
+                "n_errors": 4,
+                "metrics": [
+                    {
+                        "mean": 0.1111111111111111
+                    }
+                ],
+                "pass_at_k": {
+                    "2": 0.22222222222222224
+                },
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "openssl-selfsigned-cert__Ak6KrBX",
+                            "sanitize-git-repo__wM37zoR",
+                            "openssl-selfsigned-cert__ug3Ru3p",
+                            "sanitize-git-repo__68xL8du",
+                            "openssl-selfsigned-cert__Zzj5Wag"
+                        ],
+                        "1.0": [
+                            "fix-git__yfYvVpZ"
+                        ]
+                    }
+                },
+                "exception_stats": {
+                    "BadRequestError": [
+                        "fix-git__PBn6k8N",
+                        "sanitize-git-repo__XuMEn6e"
+                    ],
+                    "AgentTimeoutError": [
+                        "sanitize-git-repo__wM37zoR"
+                    ],
+                    "InternalServerError": [
+                        "fix-git__FkgPvZT"
+                    ]
+                }
+            }
+        }
+    }
+}

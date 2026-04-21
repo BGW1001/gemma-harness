@@ -1,0 +1,53 @@
+{
+    "id": "54f62aba-d5ab-4be8-a7c1-4e192d705eba",
+    "started_at": "2026-04-21T12:09:09.697954",
+    "finished_at": "2026-04-21T12:40:48.820832",
+    "n_total_trials": 9,
+    "stats": {
+        "n_trials": 9,
+        "n_errors": 7,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 8,
+                "n_errors": 7,
+                "metrics": [
+                    {
+                        "mean": 0.2222222222222222
+                    }
+                ],
+                "pass_at_k": {
+                    "2": 0.3333333333333333
+                },
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "openssl-selfsigned-cert__dAtju6R",
+                            "sanitize-git-repo__vXzjmF9",
+                            "openssl-selfsigned-cert__iF6VVjn",
+                            "sanitize-git-repo__aKqvCCo",
+                            "openssl-selfsigned-cert__NDHfq5Z",
+                            "sanitize-git-repo__H4fnvTy"
+                        ],
+                        "1.0": [
+                            "fix-git__Lq6bjNT",
+                            "fix-git__vTQAtou"
+                        ]
+                    }
+                },
+                "exception_stats": {
+                    "AgentTimeoutError": [
+                        "openssl-selfsigned-cert__dAtju6R",
+                        "sanitize-git-repo__vXzjmF9",
+                        "openssl-selfsigned-cert__iF6VVjn",
+                        "sanitize-git-repo__aKqvCCo",
+                        "openssl-selfsigned-cert__NDHfq5Z",
+                        "sanitize-git-repo__H4fnvTy"
+                    ],
+                    "InternalServerError": [
+                        "fix-git__XVpzd9J"
+                    ]
+                }
+            }
+        }
+    }
+}

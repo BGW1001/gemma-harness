@@ -1,0 +1,72 @@
+{
+    "id": "c5b3178a-b309-4e2d-bd04-4528fb6e8209",
+    "started_at": "2026-04-22T20:33:08.253798",
+    "finished_at": "2026-04-22T23:20:01.077581",
+    "n_total_trials": 41,
+    "stats": {
+        "n_trials": 41,
+        "n_errors": 0,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 41,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "mean": 0.024390243902439025
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "circuit-fibsqrt__bN7iKcS",
+                            "overfull-hbox__L2XP2CY",
+                            "video-processing__bjWRDKV",
+                            "distribution-search__shyu7im",
+                            "break-filter-js-from-html__efKS6rQ",
+                            "path-tracing__xx4A4wn",
+                            "dna-assembly__8HnbgVF",
+                            "vulnerable-secret__CMdhFhJ",
+                            "feal-linear-cryptanalysis__mhgY4kv",
+                            "polyglot-rust-c__xorpZXS",
+                            "dna-insert__7REvHB9",
+                            "rstan-to-pystan__GwoVakv",
+                            "extract-elf__pH5NU36",
+                            "constraints-scheduling__A5d3jVS",
+                            "custom-memory-heap-crash__B8vKRRp",
+                            "regex-chess__nSEpjs7",
+                            "write-compressor__7JnERJe",
+                            "chess-best-move__a3z6H3J",
+                            "gcode-to-text__WB5neLy",
+                            "merge-diff-arc-agi-task__wa3NXU2",
+                            "regex-log__acUZEBC",
+                            "tune-mjcf__4wYuPvE",
+                            "reshard-c4-data__sxCws9h",
+                            "torch-tensor-parallelism__dS3JBoo",
+                            "torch-pipeline-parallelism__NeGnY7M",
+                            "raman-fitting__7nnGHau",
+                            "model-extraction-relu-logits__4QxpZzM",
+                            "sparql-university__ME7RZmz",
+                            "filter-js-from-html__4QBjoFU",
+                            "largest-eigenval__TWej26j",
+                            "polyglot-c-py__R2XhVL7",
+                            "password-recovery__cCN38eB",
+                            "feal-differential-cryptanalysis__TJ4kiue",
+                            "sam-cell-seg__TCRL29E",
+                            "sqlite-db-truncate__ajkRFVX",
+                            "make-doom-for-mips__Km4wPw4",
+                            "adaptive-rejection-sampler__QbLxuD8",
+                            "gpt2-codegolf__ZvXv5Vk",
+                            "financial-document-processor__R2FfskS",
+                            "large-scale-text-editing__AMUqfo4"
+                        ],
+                        "1.0": [
+                            "fix-code-vulnerability__RyrJN62"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        }
+    }
+}

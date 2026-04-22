@@ -1,5 +1,22 @@
-max_turns: 40
+max_turns: 20
 temperature: 0.2
 max_tokens_per_call: 2048
-model_timeout_sec: 90
+model_timeout_sec: 60
 best_of_n: 1
+
+# Notes on tuning these values:
+#
+# max_turns: 20
+#   CPU-only serving (no ROCm) runs at ~11-50s/turn. 20 turns × 50s = 1000s.
+#   Combined with --agent-timeout-multiplier 3.0 (2700s effective cap), this
+#   leaves a safe margin. Was 40 before; all fix-git wins came in ≤11 turns.
+#   Reduce further if the model is still timing out on medium tasks.
+#
+# model_timeout_sec: 60
+#   Per-call hard cut. CPU-only observed median ~12s/turn, 99th ~50s.
+#   60s gives headroom for occasional slow turns without burning the budget.
+#   Was 90 before.
+#
+# temperature: 0.2
+#   Conservative for coding tasks. Qwen3-Coder model card recommends 0.7;
+#   A/B this if Qwen is the active backend (Track B).

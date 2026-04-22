@@ -1,23 +1,34 @@
-max_turns: 20
+max_turns: 40
 temperature: 0.2
-max_tokens_per_call: 2048
-model_timeout_sec: 180
+max_tokens_per_call: 65536
+model_timeout_sec: 600
 best_of_n: 1
 
 # Notes on tuning these values:
 #
-# max_turns: 20
-#   GPU (b8881 + Q6_K_XL) runs at ~35-40 t/s median with thinking-mode
-#   backends (Gemma 4, Qwen3.6). 20 turns is the plan-efficiency ceiling
-#   observed in Track C (Qwen3.6 clears fix-git and openssl in 7-10 turns).
-#   Raise to 30-40 only if a new task shape genuinely needs more.
+# max_turns: 40
+#   Raised from 20 after the 2026-04-22 full-benchmark baseline showed
+#   26 of 89 tasks tagged turn_exhaustion (using all 20 turns without
+#   solving). 40 turns gives procedural multi-step tasks (nginx, openssl,
+#   configure-git-webserver) real room. Harder tasks will still hit
+#   turn_exhaustion at 40 — that becomes the capability signal rather
+#   than budget starvation.
 #
-# model_timeout_sec: 180
-#   Per-call hard cut. Raised from 60s after Track C baseline showed
-#   sanitize-git-repo uniformly hitting model_timeout at 6-7 turns under
-#   the 60s cap across all three backbones. Three minutes gives thinking
-#   models room to generate a longer reasoning_content without tripping
-#   the watchdog.
+# max_tokens_per_call: 65536
+#   Raised from 2048 after 26 of 89 tasks tagged output_truncated
+#   (Qwen3.6 thinking-mode exceeding the 2048 budget on a single turn).
+#   64K is a generous ceiling; in practice effectively bounded by
+#   model_timeout_sec below. A turn producing 10K-20K tokens of
+#   reasoning_content + short content + tool_call is within budget now.
+#   Watch: with 40-turn runs, long-context degradation becomes a real
+#   risk — the server context is 128K. If histories exceed ~100K the
+#   model's attention quality drops.
+#
+# model_timeout_sec: 600
+#   Per-call hard cut. Raised from 180s. At thinking-mode ~35 t/s,
+#   600s × 35 = ~21000 tokens per call before timeout — the actual
+#   ceiling on how much max_tokens_per_call can be used. Raising
+#   max_tokens without raising this would be a no-op.
 #
 # temperature: 0.2
 #   Conservative for coding tasks. Qwen model cards recommend 0.7. The

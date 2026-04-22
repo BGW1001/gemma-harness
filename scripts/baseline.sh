@@ -36,7 +36,7 @@ if [[ "${SMOKE:-0}" == "1" ]]; then
   echo "[baseline] SMOKE mode: 1 task, 1 attempt"
 fi
 
-AGENT_TIMEOUT_MULTIPLIER=${AGENT_TIMEOUT_MULTIPLIER:-3.0}
+AGENT_TIMEOUT_MULTIPLIER=${AGENT_TIMEOUT_MULTIPLIER:-5.0}
 
 JOB_NAME="baseline_$(date +%Y-%m-%d__%H-%M-%S)"
 echo "[baseline] tasks=$TASKS  attempts=$N_ATTEMPTS  job=$JOB_NAME  agent_timeout_multiplier=$AGENT_TIMEOUT_MULTIPLIER"

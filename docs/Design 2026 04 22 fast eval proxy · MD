@@ -1,0 +1,318 @@
+# Design — Fast proxy eval for SWE-bench in the AutoResearch fitness loop (2026-04-22)
+
+## Purpose
+
+This document specifies the replacement of the current full SWE-bench run as the fitness signal for the AutoResearch outer loop. The full 89-task benchmark takes ~12 hours per evaluation on the fixed stack from `docs/remediation_plan.md`; this is infeasible as a reward signal for iterative optimization. The goal is a tiered evaluation stack that produces a usable fitness signal in ≤15 minutes per candidate while preserving the full benchmark as final validation.
+
+It supersedes any implicit assumption in earlier planning notes that the full benchmark is the unit of optimization. It does **not** supersede the remediation plan — it builds on the fixed serving stack and the winning Qwen3.6-35B-A3B thinking-MoE backbone established there.
+
+## Scope
+
+Five tracks, sequential but with some parallelism possible:
+
+1. **Track 1 — Eval infrastructure.** Make the real benchmark faster before introducing any proxy. Epoch AI's pre-built images + correct parallelism reduce full SWE-bench Verified from ~12 h to ~60–90 min on the existing hardware. This alone may close enough of the gap to avoid some of the downstream complexity.
+2. **Track 2 — Execution-free composite reward.** A dense, continuous, per-patch score computable in milliseconds. This becomes the inner-loop fitness signal.
+3. **Track 3 — Calibrated mini-set.** A 20–50 task subset with known correlation to the full 89-task set. This becomes the fast-validation layer, run every N inner-loop iterations.
+4. **Track 4 — Optimizer changes.** Replace whatever round-robin / greedy-best logic currently selects the next candidate. The prompt-optimization literature is unambiguous that this is a failure mode; Pareto-population retention is what works.
+5. **Track 5 — Governance.** Sacred held-out set, drift monitor, reward-hacking detector.
+
+All five share the same harness (`harness/harness.py`), same ledger schema, same fixed serving stack. The unit of change is the evaluator and the optimizer around it, not the model or the scaffold.
+
+## Context — why the user's initial "rotate through tasks" framing fails
+
+The operator's initial sketch was: take one SWE-bench task, simplify it so it runs fast, iterate 10 optimization cycles against it, rotate to the next task, repeat across all 89, then run the full benchmark. This is rejected on evidence, not taste. Three independent bodies of literature converge on the same warning:
+
+1. **Overfitting to a single task's idiosyncrasies.** MIPROv2 documentation explicitly recommends ≥200 examples; SPO (arXiv:2502.06855) identifies sample-size 3 as the lower bound and adds a validation-based reversion mechanism because single-sample updates regress. A single-task inner loop gives you no signal about whether a change that helps django-style ORM work harms sympy-style symbolic work — until you rotate, at which point you observe regression without a cause.
+2. **Prompt-space catastrophic forgetting.** Continual-learning work (Nguyen et al., arXiv:2205.13323) establishes that task ordering has statistically significant effects on forgetting. Kotha et al. (ICLR 2024) show the LLM analogue: optimizing on one distribution skews implicit task inference away from earlier targets. REMO (Wu 2025) exists *specifically* to add a replay buffer to counter this in prompt-optimization settings.
+3. **Mode collapse.** GEPA (arXiv:2507.19457, ICLR 2026 Oral) and AlphaEvolve both maintain a Pareto population with quality-diversity retention explicitly to avoid the local optima that greedy single-task iteration produces.
+
+Simplifying the task to run fast adds a fourth risk: if the simplified task no longer discriminates between configurations, the inner-loop signal is high-variance noise (Mediocrity-is-Key, arXiv:2603.16848, on anchor-difficulty selection in LLM-as-judge). We would be optimizing against a signal that does not carry ranking information.
+
+The recommended architecture below addresses all four concerns.
+
+## Recommended architecture
+
+Four layers, each with a distinct role, distinct runtime budget, and distinct failure mode:
+
+| Layer | Role | Runtime | Cadence | What it gates |
+|---|---|---|---|---|
+| L1 — execution-free composite | Dense per-patch gradient | seconds | every candidate | noise floor, malformed output |
+| L2 — calibrated mini-set | Low-variance scalar score | 5–15 min | every N (N≈5–10) inner iterations | "is this candidate worth promoting" |
+| L3 — diversity cross-check | Out-of-distribution sanity | minutes | weekly / decision points | "have we overfit SWE-bench" |
+| L4 — full 89-task + full Verified | Ground truth | 60–90 min (post-infra work) | milestone / release | final promotion |
+
+This is the pattern used implicitly by Meta's SWE-RL, R2E-Gym, and DeepSWE. It is not novel — the novelty in our setting is the specific combination of (Hobbhahn's distribution-matched 50-task mini-set) × (SWE-RL's execution-free similarity reward) × (local thinking-MoE), which nobody has published a recipe for.
+
+## Track 1 — Eval infrastructure
+
+### 1.1 Adopt Epoch AI's pre-built Docker images
+
+The current 12-hour figure reflects the stock SWE-bench harness building instance images on demand. Epoch AI's `ghcr.io/epoch-research/swe-bench.eval.*` registry ships pre-built images for the full Verified set:
+
+- Full SWE-bench image footprint: ~2 TB → 67 GiB
+- SWE-bench Verified subset: ~30 GiB
+- Reported wall time: **62–73 min for full Verified on a single 32-core / 128 GB box**, ~8 s per sample
+- 77× faster than OpenHands' prior single-machine baseline
+
+Reference: https://epoch.ai/blog/swebench-docker
+
+On our Strix Halo box (16-core Zen 5, 128 GB unified memory — CPU is not the bottleneck at this task count), expect the 89-task subset in the **15–25 min range** with this change alone. That is plausibly inside the operator's 15-minute budget without any proxy at all, and worth measuring before committing to the proxy stack.
+
+```bash
+# Pull the pre-built image registry (one-time, ~30 GiB for Verified)
+python -m swebench.harness.prepare_images \
+  --dataset_name princeton-nlp/SWE-bench_Verified \
+  --image_source epoch-research
+
+# Run with correct parallelism
+python -m swebench.harness.run_evaluation \
+  --dataset_name princeton-nlp/SWE-bench_Verified \
+  --predictions_path predictions.jsonl \
+  --max_workers 12 \
+  --cache_level env \
+  --run_id "$(date +%Y%m%d-%H%M%S)"
+```
+
+Knobs that matter:
+
+- `--max_workers`: set to `min(0.75 * nproc, 24)`. Above ~28 the Docker daemon starts dropping container-start requests. On a 16-core box, 12 is the sweet spot.
+- `--cache_level env` requires ~100 GB disk and is the right default. `instance` needs ~2 TB and is only worth it for repeated runs of the same predictions set.
+- `--modal true --parallelism 10` if cloud spill is ever needed; out of scope for now.
+
+Acceptance: full 89-task subset completes in ≤25 min on the local box, with reproducible per-task timings logged to the ledger. If this is achieved, Track 2 and Track 3 remain valuable as inner-loop accelerators but the outer-loop fitness can be the real benchmark.
+
+### 1.2 Inference-side speedups (model-serving)
+
+The L1/L2 runtime is dominated by inference, not test execution, once Track 1.1 lands. Two specific wins for Qwen3.6-35B-A3B on the fixed llama.cpp stack:
+
+- **Prefix caching.** Every SWE-bench rollout reuses a multi-thousand-token system prompt + repo summary across many tool turns. llama.cpp's prompt caching is on by default but verify `--cache-reuse` is non-zero in the startup log and that the harness client is not rotating any per-request preamble that invalidates the cache.
+- **Speculative decoding.** Not supported on the current llama.cpp Qwen3 path without work. Defer.
+
+Not in scope for this track: migration to vLLM or SGLang. Per remediation plan governance, those backends are not production-ready on gfx1151 as of April 2026.
+
+Acceptance: `llama-server` startup log shows prefix caching active; a 10-request smoke test shows >50% cache-hit rate on the preamble.
+
+## Track 2 — Execution-free composite reward (L1)
+
+This is the inner-loop fitness signal. It runs in milliseconds per candidate patch, does not invoke Docker, and has a published precedent (Meta's SWE-RL reached 41.0% on SWE-bench Verified using *only* this class of signal as the RL reward).
+
+### 2.1 Components
+
+Define the composite reward as the product (bounded to [0, 1]) of five sub-scores, each computable from the predicted patch and the oracle patch without running any test:
+
+| Component | What it measures | How | Cost |
+|---|---|---|---|
+| `apply_ok` | Is this a valid unified diff against the repo? | `git apply --check` | ~10 ms |
+| `syntax_ok` | Does the patched file parse? | `ast.parse` / `py_compile` per touched file | ~50 ms |
+| `similarity` | How close is the patch to the oracle? | `difflib.SequenceMatcher(None, pred_diff, gold_diff).ratio()` | <10 ms |
+| `localization` | Are we editing the right code? | Weighted file/function/line overlap with oracle | ~20 ms |
+| `lint_delta` | Did we introduce new lint/type errors? | `ruff --diff` or `pyflakes` new-error count, clamped | ~100 ms |
+
+Malformed output (apply fails) → reward = −1 per SWE-RL convention. This preserves the sign of the gradient for the optimizer.
+
+Reference: Meta SWE-RL, arXiv:2502.18449, `src/swerl/core/reward.py` at https://github.com/facebookresearch/swe-rl.
+
+### 2.2 Implementation
+
+New module: `eval/execution_free.py`. Pure-Python, no Docker, no network. Unit-testable with the oracle patches from the SWE-bench Verified dataset as ground truth for both `pred` and `gold` (sanity check: similarity of oracle-to-oracle = 1.0).
+
+Schema for ledger row:
+
+```json
+{
+  "candidate_id": "...",
+  "task_id": "django__django-12345",
+  "apply_ok": true,
+  "syntax_ok": true,
+  "similarity": 0.73,
+  "localization": {"file": 1.0, "function": 0.5, "line": 0.25, "weighted": 0.475},
+  "lint_delta": 0,
+  "composite": 0.61,
+  "mode": "L1"
+}
+```
+
+Weighting: start with `composite = apply_ok * syntax_ok * (0.4 * similarity + 0.4 * localization.weighted + 0.2 * (1 - normalized_lint_delta))`. Calibrate the weights by fitting to the subset of 89 tasks where we have ledger rows with both L1 and L4 results. This gives a principled weighting rather than a guessed one.
+
+### 2.3 Reward-hacking guardrails
+
+This is the class of signal that has been empirically shown to be gameable. Documented failure modes:
+
+- SWE-World observed trajectory-length collapse when the reward could be gamed.
+- R2E-Gym found learned verifiers fixate on stylistic cues like "Great! The fix works" in the thought trace.
+- Reward-Under-Attack (arXiv:2603.06621) showed RL-induced hacking driving PRM reward >0.9 while true accuracy fell below 4%.
+
+Mitigations for our setting:
+
+- **Never use L1 alone to promote a candidate.** L2 (real execution on the mini-set) is a mandatory gate before any candidate replaces the current best.
+- **Log L1/L2 disagreement rate per candidate lineage.** A rising disagreement rate (L1 improving while L2 flat or regressing) is the canary that L1 is being hacked.
+- **Sacred held-out set of 10 tasks.** Never in L1 training calibration, never in L2, never surfaced to the optimizer. Runs only on milestone promotions. If held-out score regresses while L1+L2 improve, stop the loop.
+
+Acceptance: `eval/execution_free.py` computes a composite score for every ledger row in <100 ms; oracle-vs-oracle composite = 1.0; oracle-vs-empty composite = 0 or negative; a 100-row sanity-check run agrees with L4 pass/fail on >70% of rows at a 0.5 threshold.
+
+## Track 3 — Calibrated mini-set (L2)
+
+The fast-validation layer. Runs every N inner-loop iterations, produces a real pass@1 number, gates promotion.
+
+### 3.1 Source of the mini-set
+
+Two options, in order of preference:
+
+**Option A — Adopt Hobbhahn's `SWEBench-verified-mini` directly.** 50 tasks, selected by k-means clustering and linear programming to match the pass-rate distribution of the full Verified set across 16 models. Restricted to django + sphinx environments so Docker footprint drops from ~130 GB to ~5 GB. No explicit Pearson r published against the full set, but distribution matching is a stronger property than correlation for our use case (we care about ranking preservation across candidates, which is what distribution matching delivers).
+
+Reference: https://github.com/mariushobbhahn/SWEBench-verified-mini
+
+```bash
+# 5 GB vs 130 GB, ~26x smaller footprint
+huggingface-cli download mariushobbhahn/SWEBench-verified-mini --repo-type dataset
+```
+
+**Option B — Build our own IRT-selected 25-task tinySWE set.** Fit 2-parameter logistic IRT over the ~30–50 models whose Verified trajectories are published on swebench.com/experiments, keep the most Fisher-informative items. Methodology from tinyBenchmarks (Polo et al., ICML 2024, arXiv:2402.14992) and metabench (Kipnis et al., ICLR 2025). Published numbers: 100 IRT-selected items reconstruct full scores within ~2% absolute; metabench reports Spearman r = 0.94 at <3% of original size.
+
+Option B is strictly better statistically and nobody has published an IRT-distilled SWE-bench Verified subset — it would be a minor contribution in itself — but it is a ~2 day effort versus a 2-hour drop-in for Option A.
+
+**Recommendation: start with Option A. If inner-loop signal quality proves insufficient after a few weeks of real use, build Option B.**
+
+### 3.2 Caveat on top-tier ranking
+
+Perlitz et al. (arXiv:2407.13696, SubLIME/BAT protocol) show that benchmark-subset agreement collapses when restricted to the top-tier of models — Kendall κ ≈ 0.3 for the top 5–15 models versus <0.5 overall. Our current model is nowhere near frontier, so this is not yet a risk, but if the optimizer pushes the composite-prompt configuration toward the Verified leaderboard top, the mini-set's ranking power weakens. Monitor L2/L4 disagreement at that point.
+
+### 3.3 Implementation
+
+New module: `eval/mini_set.py`. Wraps the stock SWE-bench harness against the 50-task dataset with Track 1.1's Epoch images. Returns `{pass_rate, per_task: [...], runtime_seconds}`.
+
+Acceptance: L2 runs in ≤10 min on the fixed stack; a 3-run stability test on the same candidate produces std(pass_rate) ≤ 3 percentage points.
+
+## Track 4 — Optimizer changes
+
+The current optimizer (whatever is implemented around the ledger today) needs three specific changes to avoid the failure modes documented in "Context" above.
+
+### 4.1 Pareto-population retention, not single rolling best
+
+Maintain a population of candidates, keyed by `prompt_hash`, with scores on at least two axes: (L2 pass rate, diversity-of-coverage metric). New candidates are retained if they dominate an existing population member on both axes or are non-dominated. No single "best" is tracked; the next mutation parent is sampled from the Pareto front.
+
+This is directly the GEPA pattern (arXiv:2507.19457). GEPA reports +10% over MIPROv2 on AIME-2025 with 35× fewer rollouts, primarily from this retention strategy plus textual feedback.
+
+New module: `optimizer/pareto.py`. Data structure: a list of `(prompt_hash, scores, rollout_summaries)` tuples persisted in `memory/population.jsonl`.
+
+### 4.2 Pooled mini-batch, not single-task rotation
+
+Every inner-loop evaluation samples a pooled mini-batch of 5–8 tasks from the mini-set (with replacement across iterations, deterministic seed per candidate for reproducibility). Never a single task, never round-robin.
+
+This is the MIPROv2 / TextGrad / EvoPrompt convention. It is also what the research concludes is the minimum to avoid single-task overfitting.
+
+### 4.3 Bandit-based task selection, optional
+
+If step 4.2 proves insufficient — specifically, if some tasks are consistently trivially passed or trivially failed and waste the budget — replace uniform sampling with an expected-learning-gain bandit (SEC, arXiv:2505.14970). This is a second-round optimization and should not block initial rollout.
+
+Acceptance for Track 4: the optimizer is no longer capable of a single-task-rotation schedule even if misconfigured; the population file is non-empty and contains non-dominated entries after the first 20 iterations; a deliberate "easy task" injection does not monopolize the mutation budget.
+
+## Track 5 — Governance
+
+Three artifacts, non-optional:
+
+### 5.1 Sacred held-out set
+
+Select 10 tasks from the 89-task full set at random, seed `20260422`. Record their IDs in `eval/SACRED_HELDOUT.md` and commit. These tasks:
+
+- Are never in the mini-set (L2).
+- Are never used in L1 calibration.
+- Are never surfaced to the optimizer as mutation targets.
+- Are run only on milestone promotions and quarterly drift checks.
+
+If held-out pass rate regresses by ≥2 percentage points across a promotion, the promotion is rolled back and the optimizer's last N mutations are reviewed.
+
+### 5.2 Drift monitor
+
+A daily cron job that computes, on the last 100 ledger rows: `corr(L1.composite, L2.pass_rate)` and `corr(L2.pass_rate, L4.pass_rate)` where both are available. Alerts on:
+
+- L1/L2 Spearman ρ dropping below 0.5 (L1 is being hacked).
+- L2/L4 Spearman ρ dropping below 0.7 (mini-set is losing ranking power — likely because we've pushed into the top-tier region where Perlitz-style agreement collapse kicks in).
+
+Implementation: `scripts/drift_monitor.sh` appending to `memory/drift.md`.
+
+### 5.3 Reward-hacking detector
+
+For the top-5 candidates on the Pareto front, compute L1 and L2 and log the ratio. A ratio consistently above a threshold (e.g., L1 > 0.8 while L2 < 0.3) on a single lineage is a reward-hacking fingerprint. Flag for manual review.
+
+Acceptance for Track 5: sacred held-out is committed and git-tracked; drift monitor runs successfully for 7 consecutive days; at least one deliberate reward-hacking synthetic test (a patch that gets high similarity but fails all tests) is flagged by the detector.
+
+## Implementation order
+
+Sequential, because most tracks depend on Track 1:
+
+1. **Track 1.1** — Epoch images, correct parallelism. **1 day.** Measure full 89-task runtime after. If ≤20 min, the downstream urgency drops substantially.
+2. **Track 2** — Execution-free composite reward. **2–3 days.** Landing this unlocks millisecond-scale inner loop.
+3. **Track 3 Option A** — Hobbhahn mini-set integration. **0.5 day.** Pure integration work.
+4. **Track 4.1 + 4.2** — Pareto population, pooled mini-batch. **2 days.** Non-trivial because the optimizer's state model changes.
+5. **Track 5** — Governance artifacts. **1 day.** Cheap but must not be skipped.
+6. **Track 3 Option B** (IRT mini-set) and **Track 4.3** (bandit) — defer until there is real use-experience indicating they're needed.
+
+Total estimated effort: **6–7 engineering days** for tracks 1–5; another 2–3 days if Option B proves needed.
+
+## Things explicitly out of scope
+
+- Training a learned reward model (R4P, SWE-RM style). Those are published solutions but require an RL-training infrastructure we don't have and a supervision corpus we haven't built. Defer until the rule-based L1 is empirically insufficient.
+- Migration off llama.cpp. Same rationale as remediation plan.
+- Adopting Aider Polyglot as the primary benchmark. It is a useful L3 cross-check — running it occasionally catches SWE-bench-specific overfitting — but the ground truth remains the 89-task set + SWE-bench Verified.
+- Parallel Modal / cloud eval spill. Only worth it if even the Epoch-images local run exceeds budget, which the published numbers suggest it won't.
+- Contamination checks on the mini-set. SWE-bench Verified's training-corpus overlap is a known issue but not one this track addresses; it applies identically to the full set.
+
+## Governance hooks
+
+Both `eval/` and `optimizer/` are currently locked surfaces. This document unlocks them for the scope described above, continuous with the Option F unlock from 2026-04-21 and the remediation-plan unlock from 2026-04-22. Handoff notes required:
+
+- `~/.openclaw/workspace/handoffs/gemma-harness-fast-eval-track-1-infra-2026-04-??.md`
+- `~/.openclaw/workspace/handoffs/gemma-harness-fast-eval-track-2-composite-reward-2026-04-??.md`
+- `~/.openclaw/workspace/handoffs/gemma-harness-fast-eval-track-3-miniset-2026-04-??.md`
+- `~/.openclaw/workspace/handoffs/gemma-harness-fast-eval-track-4-optimizer-2026-04-??.md`
+- `~/.openclaw/workspace/handoffs/gemma-harness-fast-eval-track-5-governance-2026-04-??.md`
+
+Each captures before-state, actions taken, after-state, and a single-paragraph summary for promotion to `memory/learnings.md`.
+
+## References
+
+Primary research (benchmarking infrastructure):
+
+- Epoch AI, "How to run SWE-bench Verified in one hour on one machine": https://epoch.ai/blog/swebench-docker
+- OpenHands evaluation at 30× speed: https://openhands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed
+- SWE-bench official evaluation guide: https://www.swebench.com/SWE-bench/guides/evaluation/
+
+Primary research (execution-free reward):
+
+- Meta, "SWE-RL: Advancing LLM Reasoning via Reinforcement Learning on Open Software Evolution", arXiv:2502.18449 — https://arxiv.org/abs/2502.18449. Reward function: https://github.com/facebookresearch/swe-rl/blob/main/src/swerl/core/reward.py
+- Patch Reasoner (R4P), arXiv:2510.22775 — https://arxiv.org/pdf/2510.22775
+- SWE-RM (execution-free feedback), arXiv:2512.21919 — https://arxiv.org/abs/2512.21919
+
+Primary research (calibrated mini-sets):
+
+- Hobbhahn, `SWEBench-verified-mini`: https://github.com/mariushobbhahn/SWEBench-verified-mini
+- Polo et al., "tinyBenchmarks: evaluating LLMs with fewer examples", arXiv:2402.14992 — https://arxiv.org/html/2402.14992
+- Kipnis et al., "metabench" — ICLR 2025
+- Hu et al., "Fluid Language Model Benchmarking", arXiv:2509.11106 — COLM 2025
+- Perlitz et al., "Benchmark Meta Evaluation", arXiv:2407.13696 — on ranking-agreement collapse at top-tier
+
+Primary research (optimizer architecture):
+
+- GEPA, arXiv:2507.19457 — ICLR 2026 Oral. Pareto-retention pattern.
+- MIPROv2 / DSPy Optimizers: https://dspy.ai/learn/optimization/optimizers/
+- SPO (Self-Supervised Prompt Optimization), arXiv:2502.06855
+- Nguyen et al., "The Effect of Task Ordering in Continual Learning", arXiv:2205.13323
+- Kotha et al., "Understanding Catastrophic Forgetting in Language Models via Implicit Inference", ICLR 2024 — https://openreview.net/forum?id=VrHiF2hsrm
+
+Primary research (reward hacking):
+
+- "Reward Under Attack", arXiv:2603.06621 — PRM hackability
+- R2E-Gym, arXiv:2504.07164 — hybrid verifier failure modes
+- Mediocrity is Key, arXiv:2603.16848 — anchor-difficulty effects on ranking
+
+Comparable production practice:
+
+- Aider's approach (Polyglot as daily driver, SWE-bench for milestones): https://aider.chat/2024/12/21/polyglot.html
+- SWE-smith (one Docker image per repo, TBs → GBs): https://openreview.net/forum?id=63iVrXc8cC
+
+Internal:
+
+- `docs/remediation_plan.md` — the fixed serving stack this builds on
+- `docs/OVERVIEW.md` — canonical project overview
+- `docs/STATUS_2026-04-22.md` — current state

@@ -1,0 +1,30 @@
+{
+    "id": "16c60bca-6350-4017-81d8-fe0518fc9b8e",
+    "started_at": "2026-04-22T11:15:08.834611",
+    "finished_at": "2026-04-22T11:21:41.774954",
+    "n_total_trials": 1,
+    "stats": {
+        "n_trials": 1,
+        "n_errors": 0,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 1,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "mean": 1.0
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "1.0": [
+                            "fix-git__t9baAhT"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        }
+    }
+}

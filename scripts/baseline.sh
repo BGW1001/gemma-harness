@@ -31,7 +31,7 @@ done
 
 N_ATTEMPTS=${N_ATTEMPTS:-3}
 if [[ "${SMOKE:-0}" == "1" ]]; then
-  INCLUDE_FLAGS="-i fix-git"
+  INCLUDE_FLAGS="-i terminal-bench/fix-git"
   N_ATTEMPTS=1
   echo "[baseline] SMOKE mode: 1 task, 1 attempt"
 fi

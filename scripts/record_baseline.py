@@ -17,6 +17,7 @@ Ledger row schema:
                      | "tool_error_cascade" | "unknown_zero"
   runtime_sec      — wall time
   drift_count      — number of turns in which protocol-drift markup was sanitized
+  repair_attempts  — number of synthetic repair injections made (Track A / A.5)
 
 Usage:
   python scripts/record_baseline.py jobs/<job_name>
@@ -112,6 +113,7 @@ def record_job(job_dir: Path) -> list[dict]:
         trace = gemma.get("trace") or []
         status = gemma.get("status", "")
         drift_events = gemma.get("drift_events") or []
+        repair_attempts = int(gemma.get("repair_attempts", 0))
 
         started = result.get("started_at")
         finished = result.get("finished_at")
@@ -137,6 +139,7 @@ def record_job(job_dir: Path) -> list[dict]:
             "failure_tag": tag_failure(reward, turns, max_turns, trace, status),
             "runtime_sec": runtime_sec,
             "drift_count": len(drift_events),
+            "repair_attempts": repair_attempts,
         }
         rows.append(row)
     return rows
@@ -166,7 +169,7 @@ def main() -> None:
     for row in rows:
         print(
             f"[record] {row['task_name']:50s} reward={row['reward']:.2f} "
-            f"turns={row['turns']:2d} drift={row['drift_count']} tag={row['failure_tag']}"
+            f"turns={row['turns']:2d} drift={row['drift_count']} repair={row['repair_attempts']} tag={row['failure_tag']}"
         )
 
 

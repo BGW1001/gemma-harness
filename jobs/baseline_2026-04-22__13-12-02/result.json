@@ -1,0 +1,42 @@
+{
+    "id": "c81a571f-27b7-4be9-9583-a63db01ff0de",
+    "started_at": "2026-04-22T13:12:06.845893",
+    "finished_at": "2026-04-22T13:50:19.191318",
+    "n_total_trials": 9,
+    "stats": {
+        "n_trials": 9,
+        "n_errors": 0,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 9,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "mean": 0.7777777777777778
+                    }
+                ],
+                "pass_at_k": {
+                    "2": 0.888888888888889
+                },
+                "reward_stats": {
+                    "reward": {
+                        "1.0": [
+                            "openssl-selfsigned-cert__tT6REJ6",
+                            "fix-git__DcrahyP",
+                            "openssl-selfsigned-cert__Jt4cKyP",
+                            "fix-git__FNbfeNL",
+                            "openssl-selfsigned-cert__aoPDEsK",
+                            "fix-git__94i5qSF",
+                            "sanitize-git-repo__eghMMGU"
+                        ],
+                        "0.0": [
+                            "sanitize-git-repo__k5gd96A",
+                            "sanitize-git-repo__WgTUJKb"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        }
+    }
+}

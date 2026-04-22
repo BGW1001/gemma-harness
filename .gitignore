@@ -5,3 +5,8 @@ __pycache__/
 *.pyc
 runs/*.json
 !runs/.gitkeep
+
+# sanitize-git-repo task deliberately contains sample API tokens in its
+# test data. These are fake but trigger GitHub push-protection. Ledger
+# rows capture the reward + metadata without the secret-bearing content.
+jobs/**/sanitize-git-repo__*/

@@ -53,6 +53,8 @@ def tag_failure(reward: float, turns: int, max_turns: int, trace: list, status: 
     if reward > 0.0:
         return "partial"
     # reward == 0 — status from the inner loop takes precedence over heuristics
+    if status.startswith("harbor_exception:"):
+        return status  # preserve the specific exception type
     if status == "malformed_model_output":
         return "malformed_model_output"
     if status == "model_timeout":
@@ -108,12 +110,25 @@ def record_job(job_dir: Path) -> list[dict]:
         reward = float(
             (result.get("verifier_result") or {}).get("rewards", {}).get("reward", 0.0)
         )
-        gemma = (result.get("agent_result") or {}).get("metadata", {}).get("gemma_result", {})
+        # Trials that fail before the agent produces output (e.g. BadRequestError
+        # on the first chat call) leave metadata==None, not {}. dict.get("k", {})
+        # only returns the default when the key is missing, not when value is None.
+        agent_result = result.get("agent_result") or {}
+        metadata = agent_result.get("metadata") or {}
+        gemma = metadata.get("gemma_result") or {}
         turns = int(gemma.get("turns", 0))
         trace = gemma.get("trace") or []
         status = gemma.get("status", "")
         drift_events = gemma.get("drift_events") or []
         repair_attempts = int(gemma.get("repair_attempts", 0))
+
+        # Surface Harbor-level exceptions (BadRequestError etc.) so they aren't
+        # silently hidden behind 'unknown_zero'.
+        exception_info = result.get("exception_info")
+        if exception_info and not status:
+            exc_type = exception_info.get("exception_type", "") if isinstance(exception_info, dict) else ""
+            if exc_type:
+                status = f"harbor_exception:{exc_type}"
 
         started = result.get("started_at")
         finished = result.get("finished_at")

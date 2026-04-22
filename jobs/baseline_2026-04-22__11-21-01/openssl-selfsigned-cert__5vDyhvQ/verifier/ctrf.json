@@ -1,0 +1,80 @@
+{
+    "results": {
+        "tool": {
+            "name": "pytest",
+            "version": "8.4.1"
+        },
+        "summary": {
+            "tests": 6,
+            "passed": 4,
+            "failed": 2,
+            "skipped": 0,
+            "pending": 0,
+            "other": 0,
+            "start": 1776821019.041666,
+            "stop": 1776821019.1754396
+        },
+        "tests": [
+            {
+                "name": "test_outputs.py::test_directory_structure",
+                "status": "passed",
+                "duration": 0.0005430009914562106,
+                "start": 1776821019.1000855,
+                "stop": 1776821019.100873,
+                "retries": 0,
+                "file_path": "test_outputs.py"
+            },
+            {
+                "name": "test_outputs.py::test_key_file",
+                "status": "passed",
+                "duration": 0.005071706022135913,
+                "start": 1776821019.1010258,
+                "stop": 1776821019.1062171,
+                "retries": 0,
+                "file_path": "test_outputs.py"
+            },
+            {
+                "name": "test_outputs.py::test_certificate_file",
+                "status": "passed",
+                "duration": 0.03925246890867129,
+                "start": 1776821019.1063306,
+                "stop": 1776821019.1457887,
+                "retries": 0,
+                "file_path": "test_outputs.py"
+            },
+            {
+                "name": "test_outputs.py::test_combined_pem_file",
+                "status": "passed",
+                "duration": 0.016585399978794158,
+                "start": 1776821019.1459718,
+                "stop": 1776821019.162899,
+                "retries": 0,
+                "file_path": "test_outputs.py"
+            },
+            {
+                "name": "test_outputs.py::test_verification_file",
+                "status": "failed",
+                "raw_status": "call_failed",
+                "duration": 0.00042317796032875776,
+                "start": 1776821019.1631103,
+                "stop": 1776821019.173413,
+                "retries": 0,
+                "file_path": "test_outputs.py",
+                "trace": "def test_verification_file():\n        \"\"\"Test that the verification file exists with correct content.\"\"\"\n        verification_file = \"/app/ssl/verification.txt\"\n>       assert os.path.exists(verification_file), \"Verification file does not exist\"\nE       AssertionError: Verification file does not exist\nE       assert False\nE        +  where False = <function exists at 0x7467cf44f100>('/app/ssl/verification.txt')\nE        +    where <function exists at 0x7467cf44f100> = <module 'posixpath' (frozen)>.exists\nE        +      where <module 'posixpath' (frozen)> = os.path\n\n/tests/test_outputs.py:108: AssertionError",
+                "message": "The test failed in the call phase due to an assertion error"
+            },
+            {
+                "name": "test_outputs.py::test_python_verification_script",
+                "status": "failed",
+                "raw_status": "call_failed",
+                "duration": 0.00031588098499923944,
+                "start": 1776821019.1735775,
+                "stop": 1776821019.1753116,
+                "retries": 0,
+                "file_path": "test_outputs.py",
+                "trace": "def test_python_verification_script():\n        \"\"\"Test that the Python verification script exists and works correctly.\"\"\"\n        script_path = \"/app/check_cert.py\"\n>       assert os.path.exists(script_path), \"Python verification script does not exist\"\nE       AssertionError: Python verification script does not exist\nE       assert False\nE        +  where False = <function exists at 0x7467cf44f100>('/app/check_cert.py')\nE        +    where <function exists at 0x7467cf44f100> = <module 'posixpath' (frozen)>.exists\nE        +      where <module 'posixpath' (frozen)> = os.path\n\n/tests/test_outputs.py:142: AssertionError",
+                "message": "The test failed in the call phase due to an assertion error"
+            }
+        ]
+    }
+}

@@ -147,9 +147,38 @@ async def run_agent(task, environment, cwd, config):
                 "repair_attempts": repair_attempts,
             }
 
-        # Execute tool calls.
+        # Truncation with no tool calls → terminate, don't loop back into a
+        # prefill-continuation request. Qwen3.6 + thinking-mode can emit long
+        # reasoning_content that hits max_tokens_per_call before any tool call;
+        # looping back would send a messages[] ending in an assistant role, which
+        # the server rejects with "Assistant response prefill is incompatible
+        # with enable_thinking". Better to stop cleanly and surface the cause.
+        if not has_tools and finish_reason != "stop":
+            return {
+                "status": "output_truncated",
+                "turns": turn,
+                "trace": messages,
+                "drift_events": drift_events,
+                "repair_attempts": repair_attempts,
+                "finish_reason": finish_reason,
+            }
+
+        # Execute tool calls. On malformed tool-call JSON (Qwen3.6 occasionally
+        # emits unterminated strings in function.arguments), inject a synthetic
+        # tool result explaining the parse error and let the model self-correct
+        # on the next turn, rather than crashing the trial.
         for tc in (msg.tool_calls or []):
-            args = json.loads(tc.function.arguments)
+            try:
+                args = json.loads(tc.function.arguments)
+            except (json.JSONDecodeError, TypeError) as e:
+                err_msg = f"tool_args_parse_error: {e}. Retry with valid JSON in function.arguments."
+                print(f"Tool-args parse error at turn {turn}: {e}")
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": json.dumps({"error": err_msg, "returncode": -1}),
+                })
+                continue
             result = await execute(tc.function.name, args, environment, cwd)
             rc = result.get("returncode")
             print(f"Executed {tc.function.name} -> return code {rc}")

@@ -1,0 +1,1 @@
+Trial break-filter-js-from-html__PWr6WyV failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}

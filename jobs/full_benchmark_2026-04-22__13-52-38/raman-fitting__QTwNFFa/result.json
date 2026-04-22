@@ -1,0 +1,99 @@
+{
+    "id": "7a3dd59a-c7f7-42f2-8fc5-25e548e65b03",
+    "task_name": "terminal-bench/raman-fitting",
+    "trial_name": "raman-fitting__QTwNFFa",
+    "trial_uri": "file:///home/benwa/.openclaw/workspace/gemma-harness/jobs/full_benchmark_2026-04-22__13-52-38/raman-fitting__QTwNFFa",
+    "task_id": {
+        "org": "terminal-bench",
+        "name": "raman-fitting",
+        "ref": "sha256:6b2c34e3c5016c763bf1f2f2a7210ee711565f90b18c09b68f95c0daa9220229"
+    },
+    "source": "terminal-bench/terminal-bench-2",
+    "task_checksum": "cdeb5ca1b72303c5b12bcf92f038351aea479661258b714a9648bed80e05666d",
+    "config": {
+        "task": {
+            "path": null,
+            "git_url": null,
+            "git_commit_id": null,
+            "name": "terminal-bench/raman-fitting",
+            "ref": "sha256:6b2c34e3c5016c763bf1f2f2a7210ee711565f90b18c09b68f95c0daa9220229",
+            "overwrite": false,
+            "download_dir": null,
+            "source": "terminal-bench/terminal-bench-2"
+        },
+        "trial_name": "raman-fitting__QTwNFFa",
+        "trials_dir": "jobs/full_benchmark_2026-04-22__13-52-38",
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": 3.0,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": null,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": null,
+            "import_path": "harness.agent:GemmaAgent",
+            "model_name": null,
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "kwargs": {},
+            "env": {}
+        },
+        "environment": {
+            "type": "docker",
+            "import_path": null,
+            "force_build": false,
+            "delete": true,
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "suppress_override_warnings": false,
+            "mounts_json": null,
+            "env": {},
+            "kwargs": {}
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "env": {},
+            "disable": false
+        },
+        "artifacts": [],
+        "job_id": "8c5fa7a7-0c7b-4faf-9e92-2ca471a8351c"
+    },
+    "agent_info": {
+        "name": "gemma-harness",
+        "version": "0.1.0",
+        "model_info": null
+    },
+    "agent_result": {
+        "n_input_tokens": null,
+        "n_cache_tokens": null,
+        "n_output_tokens": null,
+        "cost_usd": null,
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": null,
+    "exception_info": {
+        "exception_type": "BadRequestError",
+        "exception_message": "Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}",
+        "exception_traceback": "Traceback (most recent call last):\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/harbor/trial/trial.py\", line 547, in run\n    await self._execute_agent()\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/harbor/trial/trial.py\", line 285, in _execute_agent\n    await asyncio.wait_for(\n    ...<6 lines>...\n    )\n  File \"/home/ben/miniconda3/lib/python3.13/asyncio/tasks.py\", line 507, in wait_for\n    return await fut\n           ^^^^^^^^^\n  File \"/home/benwa/.openclaw/workspace/gemma-harness/harness/agent.py\", line 43, in run\n    result = await run_agent(instruction, environment, cwd, config)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/benwa/.openclaw/workspace/gemma-harness/harness/harness.py\", line 70, in run_agent\n    resp = await chat(\n           ^^^^^^^^^^^\n    ...<5 lines>...\n    )\n    ^\n  File \"/home/benwa/.openclaw/workspace/gemma-harness/harness/client.py\", line 10, in chat\n    return await _client.chat.completions.create(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<5 lines>...\n    )\n    ^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/openai/resources/chat/completions/completions.py\", line 2714, in create\n    return await self._post(\n           ^^^^^^^^^^^^^^^^^\n    ...<49 lines>...\n    )\n    ^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/openai/_base_client.py\", line 1913, in post\n    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ben/miniconda3/lib/python3.13/site-packages/openai/_base_client.py\", line 1698, in request\n    raise self._make_status_error_from_response(err.response) from None\nopenai.BadRequestError: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}\n",
+        "occurred_at": "2026-04-22T17:45:11.027793"
+    },
+    "started_at": "2026-04-22T07:38:33.591721Z",
+    "finished_at": "2026-04-22T07:45:14.191601Z",
+    "environment_setup": {
+        "started_at": "2026-04-22T07:38:33.594142Z",
+        "finished_at": "2026-04-22T07:38:42.928674Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-04-22T07:38:42.928699Z",
+        "finished_at": "2026-04-22T07:38:42.928738Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-04-22T07:38:42.928788Z",
+        "finished_at": "2026-04-22T07:45:10.871876Z"
+    },
+    "verifier": null
+}

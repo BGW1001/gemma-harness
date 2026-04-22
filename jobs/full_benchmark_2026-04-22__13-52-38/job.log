@@ -1,0 +1,82 @@
+Trial circuit-fibsqrt__aXVeqPL failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial overfull-hbox__LVTTzj4 failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial video-processing__uT5jVJo failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial distribution-search__mM3WuvT failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial break-filter-js-from-html__PWr6WyV failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial path-tracing__7Np8KQQ failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial dna-assembly__sCBhvDC failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial vulnerable-secret__QqSJ9Lo failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial feal-linear-cryptanalysis__GtEKvcA failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial polyglot-rust-c__HZqumYE failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial dna-insert__V8YVDZk failed: Unterminated string starting at: line 1 column 8 (char 7)
+Not retrying trial because the maximum number of retries has been reached
+Trial rstan-to-pystan__pa9mRpE failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial extract-elf__ryHnPf6 failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial constraints-scheduling__HKmAPfJ failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial custom-memory-heap-crash__EmKbAXc failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial regex-chess__rXwo6r2 failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial write-compressor__FtNdjai failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial chess-best-move__tKNYNti failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial gcode-to-text__83NCBis failed: Error code: 400 - {'error': {'code': 400, 'message': 'request (1484981 tokens) exceeds the available context size (131072 tokens), try increasing it', 'type': 'exceed_context_size_error', 'n_prompt_tokens': 1484981, 'n_ctx': 131072}}
+Not retrying trial because the maximum number of retries has been reached
+Trial merge-diff-arc-agi-task__WTXKE7J failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial regex-log__MNUsTpB failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial tune-mjcf__ezEvf2a failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial reshard-c4-data__D5JWR2e failed: Unterminated string starting at: line 1 column 53 (char 52)
+Not retrying trial because the maximum number of retries has been reached
+Trial torch-tensor-parallelism__w7CtXpY failed: Unterminated string starting at: line 1 column 8 (char 7)
+Not retrying trial because the maximum number of retries has been reached
+Trial torch-pipeline-parallelism__ZVpTNkq failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial raman-fitting__QTwNFFa failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial model-extraction-relu-logits__w3RK9oy failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial sparql-university__6uN7AZX failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial filter-js-from-html__UjuUHDq failed: Unterminated string starting at: line 1 column 51 (char 50)
+Not retrying trial because the maximum number of retries has been reached
+Trial largest-eigenval__Ecg9eJz failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial polyglot-c-py__LSASLCG failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial password-recovery__DKZdvMP failed: Error code: 400 - {'error': {'code': 400, 'message': 'request (7923909 tokens) exceeds the available context size (131072 tokens), try increasing it', 'type': 'exceed_context_size_error', 'n_prompt_tokens': 7923909, 'n_ctx': 131072}}
+Not retrying trial because the maximum number of retries has been reached
+Trial feal-differential-cryptanalysis__d3GAbof failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial sam-cell-seg__jWVedMS failed: Error code: 400 - {'error': {'code': 400, 'message': 'request (357883 tokens) exceeds the available context size (131072 tokens), try increasing it', 'type': 'exceed_context_size_error', 'n_prompt_tokens': 357883, 'n_ctx': 131072}}
+Not retrying trial because the maximum number of retries has been reached
+Trial sqlite-db-truncate__mQM8yRG failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial fix-code-vulnerability__vrm3Xph failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial make-doom-for-mips__dZiEtBh failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial adaptive-rejection-sampler__ojyJAR5 failed: Unterminated string starting at: line 1 column 47 (char 46)
+Not retrying trial because the maximum number of retries has been reached
+Trial gpt2-codegolf__vWMujHZ failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial financial-document-processor__sarhMnr failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached
+Trial large-scale-text-editing__hT8zRFg failed: Error code: 400 - {'error': {'code': 400, 'message': 'Assistant response prefill is incompatible with enable_thinking.', 'type': 'invalid_request_error'}}
+Not retrying trial because the maximum number of retries has been reached

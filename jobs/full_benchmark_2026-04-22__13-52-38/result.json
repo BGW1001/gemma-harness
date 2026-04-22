@@ -1,0 +1,125 @@
+{
+    "id": "8c5fa7a7-0c7b-4faf-9e92-2ca471a8351c",
+    "started_at": "2026-04-22T13:52:46.544238",
+    "finished_at": "2026-04-22T20:12:16.724708",
+    "n_total_trials": 89,
+    "stats": {
+        "n_trials": 89,
+        "n_errors": 41,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 48,
+                "n_errors": 41,
+                "metrics": [
+                    {
+                        "mean": 0.1797752808988764
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "make-mips-interpreter__PjNhTAx",
+                            "build-pov-ray__XykGrQA",
+                            "protein-assembly__gFaDVYb",
+                            "compile-compcert__3H26rLK",
+                            "caffe-cifar-10__ZUeppEU",
+                            "install-windows-3-11__R3RpXWP",
+                            "openssl-selfsigned-cert__RFQuB3E",
+                            "crack-7z-hash__Bdfnskq",
+                            "db-wal-recovery__B5XT73S",
+                            "headless-terminal__DJskD9T",
+                            "winning-avg-corewars__kZdRokL",
+                            "build-cython-ext__JbQYKMH",
+                            "mteb-leaderboard__rFqPMik",
+                            "mailman__6KesbLH",
+                            "extract-moves-from-video__w5YGtUq",
+                            "kv-store-grpc__GPk3UaU",
+                            "git-multibranch__ASe9f7D",
+                            "qemu-alpine-ssh__PLu9sLd",
+                            "build-pmars__c96kxzW",
+                            "sanitize-git-repo__gpCjRXg",
+                            "train-fasttext__3iXZ9Uc",
+                            "schemelike-metacircular-eval__CNsPzPo",
+                            "count-dataset-tokens__HFL7XcT",
+                            "cobol-modernization__ExkGu8h",
+                            "fix-ocaml-gc__ezeu2Vn",
+                            "pytorch-model-cli__WGtKmNY",
+                            "bn-fit-modify__KGvNTD5",
+                            "mcmc-sampling-stan__S6HD3wr",
+                            "mteb-retrieve__UD2CwPx",
+                            "path-tracing-reverse__jEf8ggg",
+                            "llm-inference-batching-scheduler__3VsUtXa",
+                            "qemu-startup__y5mcrNN"
+                        ],
+                        "1.0": [
+                            "log-summary-date-ranges__wid67Bp",
+                            "cancel-async-tasks__cnwswot",
+                            "git-leak-recovery__7bJGkUW",
+                            "fix-git__fyzPGLv",
+                            "prove-plus-comm__RYMakBc",
+                            "pytorch-model-recovery__2pqLTQN",
+                            "multi-source-data-merger__E3hZYbU",
+                            "nginx-request-logging__tVsyTMJ",
+                            "sqlite-with-gcov__hxTJ6Fk",
+                            "pypi-server__gEFfUNN",
+                            "hf-model-inference__LQ7WbUy",
+                            "query-optimize__6hkVsK3",
+                            "modernize-scientific-stack__3R4jVt5",
+                            "code-from-image__C9EqozD",
+                            "portfolio-optimization__5wKFu8a",
+                            "configure-git-webserver__GJegnd6"
+                        ]
+                    }
+                },
+                "exception_stats": {
+                    "BadRequestError": [
+                        "circuit-fibsqrt__aXVeqPL",
+                        "overfull-hbox__LVTTzj4",
+                        "video-processing__uT5jVJo",
+                        "distribution-search__mM3WuvT",
+                        "break-filter-js-from-html__PWr6WyV",
+                        "path-tracing__7Np8KQQ",
+                        "dna-assembly__sCBhvDC",
+                        "vulnerable-secret__QqSJ9Lo",
+                        "feal-linear-cryptanalysis__GtEKvcA",
+                        "polyglot-rust-c__HZqumYE",
+                        "rstan-to-pystan__pa9mRpE",
+                        "extract-elf__ryHnPf6",
+                        "constraints-scheduling__HKmAPfJ",
+                        "custom-memory-heap-crash__EmKbAXc",
+                        "regex-chess__rXwo6r2",
+                        "write-compressor__FtNdjai",
+                        "chess-best-move__tKNYNti",
+                        "gcode-to-text__83NCBis",
+                        "merge-diff-arc-agi-task__WTXKE7J",
+                        "regex-log__MNUsTpB",
+                        "tune-mjcf__ezEvf2a",
+                        "torch-pipeline-parallelism__ZVpTNkq",
+                        "raman-fitting__QTwNFFa",
+                        "model-extraction-relu-logits__w3RK9oy",
+                        "sparql-university__6uN7AZX",
+                        "largest-eigenval__Ecg9eJz",
+                        "polyglot-c-py__LSASLCG",
+                        "password-recovery__DKZdvMP",
+                        "feal-differential-cryptanalysis__d3GAbof",
+                        "sam-cell-seg__jWVedMS",
+                        "sqlite-db-truncate__mQM8yRG",
+                        "fix-code-vulnerability__vrm3Xph",
+                        "make-doom-for-mips__dZiEtBh",
+                        "gpt2-codegolf__vWMujHZ",
+                        "financial-document-processor__sarhMnr",
+                        "large-scale-text-editing__hT8zRFg"
+                    ],
+                    "JSONDecodeError": [
+                        "dna-insert__V8YVDZk",
+                        "reshard-c4-data__D5JWR2e",
+                        "torch-tensor-parallelism__w7CtXpY",
+                        "filter-js-from-html__UjuUHDq",
+                        "adaptive-rejection-sampler__ojyJAR5"
+                    ]
+                }
+            }
+        }
+    }
+}

@@ -59,6 +59,8 @@ def tag_failure(reward: float, turns: int, max_turns: int, trace: list, status: 
         return "malformed_model_output"
     if status == "model_timeout":
         return "model_timeout"
+    if status == "output_truncated":
+        return "output_truncated"
     if turns >= max_turns - 1:
         return "turn_exhaustion"
     # Heuristic for graceful giveup: last assistant message has long content + no tool call.

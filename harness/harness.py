@@ -1,6 +1,6 @@
 import json
 import re
-from openai import APITimeoutError
+from openai import APITimeoutError, BadRequestError, InternalServerError, APIError
 from harness.client import chat
 from harness.tools import TOOL_SCHEMAS, execute
 from prompts import SYSTEM_PROMPT
@@ -74,6 +74,33 @@ async def run_agent(task, environment, cwd, config):
                 max_tokens=config["max_tokens_per_call"],
                 timeout=model_timeout_sec,
             )
+        except InternalServerError as e:
+            # Server-side 500 — typically llama.cpp failing to parse the model's
+            # tool_call arguments as JSON when arguments contain unescaped braces
+            # (PYEOF heredocs, JSON snippets, etc.). Known llama.cpp issue #21384.
+            # These are deterministic on the current conversation state; retry
+            # won't help. Terminate cleanly so Harbor doesn't mark it as an
+            # uncaught exception.
+            return {
+                "status": "server_tool_parse_error",
+                "turns": turn,
+                "trace": messages,
+                "drift_events": drift_events,
+                "repair_attempts": repair_attempts,
+                "error": str(e)[:500],
+            }
+        except BadRequestError as e:
+            # Server-side 400 — covers any edge cases not caught by the
+            # finish_reason=length guard below (e.g., prefill-continuation on
+            # thinking-mode templates, context overflow).
+            return {
+                "status": "server_bad_request",
+                "turns": turn,
+                "trace": messages,
+                "drift_events": drift_events,
+                "repair_attempts": repair_attempts,
+                "error": str(e)[:500],
+            }
         except APITimeoutError:
             return {
                 "status": "model_timeout",

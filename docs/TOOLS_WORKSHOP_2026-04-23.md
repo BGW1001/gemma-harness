@@ -330,3 +330,235 @@ Estimated total: 80 lines of tools.py, 1 paragraph of prompts/system.md, ~20 lin
 - `runs/ledger.jsonl` — all trial outcomes (source of the evidence counts above)
 - `harness/tools.py` — current tool implementations
 - `prompts/system.md` — current system prompt
+
+---
+
+## Appendix A — Lessons from other agent frameworks
+
+Everything below is prior art. Use it as a menu of ideas, not a must-adopt list. For each framework, I've surfaced the **genuinely distinctive design choices** rather than repeating the common "bash + write + grep" baseline.
+
+### Claude Code (Anthropic's official CLI — the harness you're talking to right now)
+
+Tools exposed: `Read`, `Write`, `Edit`, `NotebookEdit`, `Glob`, `Grep`, `Bash`, `Task*`, `Skill`, `Agent`, `WebFetch`, `WebSearch`, `AskUserQuestion`, `ScheduleWakeup`, `Monitor`, `ToolSearch`.
+
+**Distinctive design choices worth borrowing:**
+
+- **Read-before-Edit/Write discipline.** The harness tracks which files you've read in the current session; `Edit`/`Write` on an unread existing file errors out. Catches "assumed X was in the file" bugs. ~5 lines of state-tracking in the harness.
+- **Separated Glob (path discovery) vs Grep (content search).** Two small tools with clear roles outperform one big `search` tool. Glob returns paths sorted by mtime — a small but useful affordance.
+- **Three-mode Grep.** `content` / `files_with_matches` / `count`. Same tool, three answer shapes. Model picks the cheapest mode for the question.
+- **Structured Task tracking** (`TaskCreate`, `TaskUpdate`, `TaskList`, etc.). Forces multi-step plans to be visible and machine-readable. Status state machine (`pending → in_progress → completed`) is enforced.
+- **`Agent` as a tool.** Sub-agent delegation is a first-class primitive; the main loop can spawn a bounded sub-loop for heavy sub-tasks. Comes with optional background execution.
+- **`ToolSearch` / deferred schema loading.** Not every tool's schema is in context at all times — only tool *names* are. Schemas get loaded on-demand via `ToolSearch`. Context-efficiency pattern for harnesses with >15 tools.
+- **`Skill` as invocable playbook.** Named, versioned playbooks (update-config, fewer-permission-prompts, etc.) that encapsulate multi-step procedures. Roughly analogous to our `skills/*.md` but tool-invokable.
+- **`ScheduleWakeup`** for self-pacing in long runs (the tool this session uses to check on the benchmark between wakes).
+
+**Design rules not borrowable:** WebFetch/WebSearch (out of scope, no network for Terminal-Bench), AskUserQuestion (no human in benchmark loop).
+
+### OpenClaw (Ben's own system, for context)
+
+OpenClaw isn't a tool framework — it's a **structural convention** for agent identity, memory, and handoff. The "tools" are *artifacts* on the filesystem:
+
+- **Identity files** per agent: `SOUL.md`, `OPERATING_RULES.md`, `PROCESS.md`, `CONTEXT.md`, `MEMORY.md`, `DONT_DO.md`.
+- **Skills** as named, version-controlled markdown directories under `~/.openclaw/workspace/skills/`, reusable across agents.
+- **Handoff protocol**: durable handoff notes in `~/.openclaw/workspace/handoffs/` mark transfer of work between agents or phases.
+- **Self-improvement loop**: append-only `memory/learnings.md` per iteration; promote validated insights to `MEMORY.md`; anti-patterns to `DONT_DO.md`. Mirrored in our `gemma-agent/` folder today.
+- **Registry + governance** (`REGISTRY.md`, `GOVERNANCE.md`, `ESCALATION_LOG.md`) — tracks which agents exist and who owns them.
+
+**Distinctive vs LLM-framework thinking:** OpenClaw treats *durable state between runs* as the first-class primitive. Most agent frameworks focus on within-run state. Worth borrowing when an agent is meant to persist across sessions.
+
+### LangChain / LangGraph
+
+LangChain is the biggest "tool pantry" — the canonical list is large. Built-in categories:
+
+- **Code execution:** `PythonREPLTool`, `PythonAstREPLTool` (persistent REPL), `ShellTool`
+- **Search:** `DuckDuckGoSearchRun`, `SerpAPIWrapper`, `TavilySearchResults`, `WikipediaQueryRun`, `ArxivQueryRun`, `PubmedQueryRun`
+- **Math:** `LLMMathChain`, `WolframAlphaQueryRun`
+- **File ops:** `WriteFileTool`, `ReadFileTool`, `ListDirectoryTool`, `CopyFileTool`, `DeleteFileTool`, `MoveFileTool` (all under `FileManagementToolkit`)
+- **HTTP:** `RequestsGetTool`, `RequestsPostTool`, etc.
+- **Structured data:** `JsonToolkit`, `SQLDatabaseToolkit` (query + schema discovery + list-tables), `OpenAPIToolkit`
+- **RAG:** `VectorStoreQATool`, retriever-as-tool abstractions
+- **Agent orchestration:** `AgentExecutor`, multi-tool chains
+
+**Distinctive design choices worth considering:**
+
+- **`SQLDatabaseToolkit` as a *toolkit*** — a bundle of tools (list_tables, get_schema, query) that work together. Useful mental model when we add `sqlite_query` later.
+- **LangGraph state machines.** Agents as explicit state graphs with checkpoints, human-in-the-loop interrupts, and resumable runs. Overkill for single-trial benchmarking, but relevant if we ever want pause/resume on a long trial.
+- **Persistent Python REPL.** `PythonAstREPLTool` keeps variables across calls — the model can `x = compute()` then on a later turn `print(x.shape)` without recomputing. We don't have this (every `python(code)` call is a fresh interpreter).
+
+**Not borrowable directly:** the majority of LangChain's tool pantry (Wikipedia, Wolfram, DuckDuckGo) is irrelevant to local-container benchmarks.
+
+### SWE-agent (Princeton — the closest prior art to what we're doing)
+
+Coined **ACI = Agent-Computer Interface**: the observation that LLM agents perform dramatically better when given tools designed for LLMs rather than raw shell. Their core insight applies directly to us.
+
+**Their custom tool set:**
+
+- **Viewport file viewer.** `open(file)` shows a 100-line window with a scroll position. Subsequent `scroll_up` / `scroll_down` moves the window. Full file contents are never dumped; context cost stays bounded regardless of file size.
+- **`goto(line)`** — jump the viewport to a line number.
+- **`search_file(pattern)`** — search within the currently-open file.
+- **`search_dir(pattern, [dir])`** — search across directory.
+- **`find_file(name)`** — find a file by name.
+- **`edit(start_line, end_line, replacement)`** — line-range-based replacement. No "unique old_text" requirement; explicit coordinates.
+- **`create(filename)`** — create empty file, open it in viewport.
+- **`submit()`** — explicit submission of the current state as the answer.
+
+**Takeaways for our harness:**
+
+- Our Tier-1 `read_file_range` is basically SWE-agent's viewport. Strong validation — this pattern is the single most-cited ACI win.
+- Our Tier-2 `done(summary)` mirrors SWE-agent's `submit`.
+- Their **line-based edit** is more robust than our uniqueness-based `file_edit`. `apply_patch(diff)` (Tier 1) captures the same idea via unified diff; alternative: `edit_lines(path, start, end, new_text)` — simpler, maybe worth a variant.
+
+### OpenHands (All-Hands-AI, formerly OpenDevin)
+
+Production-quality general-purpose agent scaffold. Strong emphasis on **persistent sessions**.
+
+**Their distinctive tools:**
+
+- **Persistent bash session.** `bash` isn't stateless — it keeps a shell alive across calls. `cd /app; export X=1` on turn 3 is still in effect on turn 7. Solves problems like "why did the model just run `cd` 53 times in v3?"
+- **Persistent IPython session.** Same idea for Python. Variables persist; imports persist.
+- **Browser automation** via Playwright: `browse(url)`, `click(selector)`, `fill(selector, text)`, `scroll`, `screenshot`.
+- **Jupyter-notebook-style execution** with rich outputs (plots, DataFrames).
+- **`edit`** with line ranges (similar to SWE-agent).
+
+**Distinctive considerations:**
+
+- Persistent sessions are a **double-edged sword**. Pro: massively fewer redundant commands (no `cd`-per-turn). Con: state leaks between tool calls, harder to reason about observability ("did the last `echo $X` just print stale state?"). Worth an experiment but needs care.
+- Browser tools are out of scope for Terminal-Bench but would matter for web-task benchmarks.
+
+### Aider (pair-programming CLI)
+
+Focused specifically on code editing in an existing git repo. Not directly an agent benchmark tool but the design is crisp.
+
+**Distinctive design choices:**
+
+- **Repository map.** On startup Aider builds a tree-sitter AST summary of the repo — list of files + key symbols per file. Provided to the model as initial context. Reduces "grep around blindly" turns on large repos.
+- **Edit formats.** Configurable: whole-file, udiff-style, or "SEARCH/REPLACE block" (exact match). The model picks the cleanest format per change. Their ablations show the choice matters more than you'd think.
+- **Git-backed commits.** Each successful edit is auto-committed with a generated message. Trivial rollback if a change is wrong.
+- **Undo tool.** The model can `undo` a previous commit if it went wrong.
+
+**Takeaways:**
+
+- A **repo map on turn 1** is probably worth it for tasks like `sanitize-git-repo`, `git-leak-recovery` — would save 10+ turns of `ls -R` and `find`. Cost: one server-side pass of `find` or `tree-sitter-based` summary per task setup. Worth workshopping as a `task_setup_info` tool or a hidden pre-turn context injection.
+- The **multi-format edit** idea generalizes our `file_edit` + `apply_patch` split. Aider's third mode (SEARCH/REPLACE) is functionally identical to our `file_edit`; our `write_file` + `apply_patch` cover the other two.
+
+### AutoGen (Microsoft)
+
+Multi-agent conversation framework.
+
+**Distinctive design choices:**
+
+- **Agent-to-agent messaging** as the primitive. "UserProxyAgent", "AssistantAgent", "GroupChatManager" orchestrates.
+- **Code executor** abstraction (local Docker or remote) used by all agents — clean separation of "what to execute" vs "where to execute."
+- **Conversation termination rules** (like "end when someone says TERMINATE").
+
+**Takeaways:**
+
+- Multi-agent patterns are **overkill for single-trial benchmarking**, but if we ever wanted to explore "planner agent + executor agent" structures, AutoGen's decomposition is clean.
+- Their code-executor abstraction is useful framing for our own `environment.exec` boundary.
+
+### ReAct / plain tool-use (the baseline)
+
+Thought → Action → Observation. No special tool discipline beyond function schemas.
+
+**Takeaway:** This is what most basic LLM-agent frameworks reduce to. Everything above is a layer on top of this baseline. We're operating at ReAct + function-calling with some discipline (protocol drift defense, structured ledger, tiered eval). That's already a fairly sophisticated scaffold.
+
+---
+
+## Appendix B — Prioritized takeaways from the cross-framework survey
+
+Ranked by likely impact on our benchmark Pass@1, given the evidence we have.
+
+| Idea | Source | Tier | Comment |
+|---|---|---|---|
+| Viewport file reader (`read_file_range`) | SWE-agent | 1 | Already in our shipping slate. Strong validation. |
+| Apply-patch / line-range edit | SWE-agent, Aider | 1 | Already in our shipping slate. |
+| Structured `done(summary)` | SWE-agent, Claude Code | 2 | Already in our shipping slate. |
+| Repository map on first turn | Aider | 2 | New idea — could save ~10 turns on git/repo tasks. Workshop. |
+| Persistent bash session | OpenHands | 3 | Tempting (53 `cd` calls!) but state-leak risk. Workshop carefully. |
+| Persistent Python REPL | LangChain, OpenHands | 3 | Same class as persistent bash. Lower-value for Terminal-Bench. |
+| Read-before-Edit discipline | Claude Code | 3 | Small quality win; low implementation cost. |
+| Three-mode `grep` | Claude Code | 3 | Small context-efficiency win. |
+| `Agent` sub-delegation | Claude Code, AutoGen | 4 | Overkill for single-trial work. Revisit if task complexity grows. |
+| Tool-search / deferred schemas | Claude Code | 4 | Only relevant at >15 tools. We have 7. |
+| Multi-agent orchestration | AutoGen, LangGraph | 4 | Out of scope for a single-trial benchmark agent. |
+| Browser automation | OpenHands | 4 | Out of scope (no web tasks in Terminal-Bench). |
+
+## Appendix C — Concrete new candidates from the survey
+
+Add to the tier list above:
+
+### `repo_map(root=".")` — task-setup pass summarizing the working directory
+
+**Source:** Aider.
+
+**Signature:**
+```
+repo_map(root: str = ".", max_files: int = 200)
+  → { "tree": str, "key_symbols": { "path": [symbols...], ... } }
+```
+
+Returns a compact tree-view of the working directory plus key symbols (function/class names) extracted from each Python/JS/Rust/C source file (via `ast.parse` for Python, `grep` for others — not full tree-sitter).
+
+**Evidence of need:** on tasks that land the agent in a repo it doesn't know (git-leak-recovery, sanitize-git-repo, configure-git-webserver, many others), the first 3-5 turns are uniformly `ls`, `ls -R`, `find`, `grep -r`. A single `repo_map` call could replace that pre-amble.
+
+**Trade-offs:** (+) reduces exploration turns, which is most valuable on 20-turn-capped runs. (−) may return too much context on huge repos; needs `max_files` truncation. (−) some tasks don't benefit (the "working dir" is a single binary, no source tree).
+
+**Decision:** promote to Tier 2, workshop whether to invoke it automatically on turn 1 or leave as model-optional.
+
+### `persistent_bash(cmd)` — stateful shell session
+
+**Source:** OpenHands.
+
+**Signature:**
+```
+persistent_bash(cmd: str, session: str = "default")
+  → { "stdout", "stderr", "returncode", "session": "..." }
+```
+
+Keeps a shell process alive per trial. Subsequent calls share cwd, env vars, exported functions, background jobs.
+
+**Evidence of need:** 53 `cd` calls in v3 suggest the model is wasting turns re-entering directories. Many task patterns are `cd /app && some_long_command && cd .. && other_command`.
+
+**Trade-offs:** (+) ergonomic — matches real-world interactive shell experience. (+) ~20-30% turn reduction on tasks with many state-dependent commands. (−) state bugs are harder to debug — a failing command might depend on state set 5 turns ago. (−) requires managing pty lifetime + cleanup per trial.
+
+**Decision:** promote to Tier 3, workshop — needs an A/B test run before shipping.
+
+### `edit_lines(path, start, end, new_content)` — line-range replacement
+
+**Source:** SWE-agent.
+
+**Signature:**
+```
+edit_lines(path: str, start: int, end: int, new_content: str)
+  → { "ok": bool, "lines_replaced": int }
+```
+
+Alternative to `file_edit` (unique-match) and `apply_patch` (unified diff). Explicit line coordinates. Easier for the model than generating a valid unified diff when it has read the file via `read_file_range` and knows exact line numbers.
+
+**Trade-offs:** (+) easiest edit format for the model when line numbers are known; (+) pairs naturally with viewport reading. (−) a third edit tool to choose among. (−) line numbers can drift if prior edits changed file length.
+
+**Decision:** **maybe skip.** `apply_patch` (Tier 1) covers this use case with a richer format. Only add if `apply_patch` proves too complex for the model to produce reliably.
+
+### Three-mode `grep` / structured Grep
+
+**Source:** Claude Code.
+
+**Change:** our existing `grep(pattern, path)` gains an `output_mode` parameter: `"content"` (default, current behaviour), `"files_with_matches"`, `"count"`.
+
+**Trade-offs:** (+) cheap; (+) context-efficiency win when the model just wants to know "does X exist in this dir?" (−) model has to remember the mode parameter.
+
+**Decision:** promote to Tier 2, ship with Tier 1 batch. 5 extra lines of code.
+
+---
+
+## Appendix D — Architectural questions raised by the survey
+
+These are **workshop items**, not decisions:
+
+- **Should we make `environment.exec` the clean boundary it could be?** Today `bash`, `python`, `r`, `file_view`, `file_edit`, `write_file`, `grep`, `apt_install` (future) all call through `environment.exec`. The boundary is consistent. But we could formalize it more: the harness knows what Docker/task-container state looks like, and tools could run via structured invocation (like AutoGen's code-executor abstraction). Not urgent.
+
+- **Do we want a task-setup "turn 0" tool like `repo_map`, or should this be a prompt-time context injection?** Two shapes with different trade-offs: as a tool, the model decides when to invoke (may skip it on simple tasks). As context injection, it's always there (cost on every task regardless of need). Workshop.
+
+- **Is persistence (bash session, Python REPL) worth the observability hit?** Hard to tell without an A/B. Workshop — could be one of the first "real" AutoResearch iterations (same prompt, persistent vs stateless bash).
+
+- **Do we lean toward "many narrow tools" (Aider, SWE-agent) or "few powerful tools" (ReAct, us currently)?** Narrow tools = easier for the model to pick right; many tools = schema bloat + choice paralysis. Current sweet spot feels like 8-12. Above 15 starts to need deferred loading (Claude Code's approach).

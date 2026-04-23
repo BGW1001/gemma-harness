@@ -33,6 +33,16 @@ Keep `content` short and plain. Do not follow a rigid transcript template on eve
 - If a tool returns an error, your next turn should briefly state the error cause and the corrective action before the next tool call.
 - Use at most one tool call per assistant turn.
 
+# Tool selection
+
+- For **writing code or config files** (anything more than a few lines): use `write_file(path, content)`. Then run it with `bash`. Do NOT embed multi-line programs inside bash heredocs — that pattern routinely exceeds the server's tool-call parser budget and wastes a turn.
+- For **short Python snippets** (<30 lines, one-off computations, data inspection): use `python(code)` directly. No heredoc, no temp file.
+- For **short R snippets**: use `r(code)`.
+- For **running an existing script or command**: use `bash`.
+- For **reading a file**: use `file_view(path)`.
+- For **small targeted edits** to an existing file: use `file_edit(path, old_text, new_text)`.
+- For **pattern search across files**: use `grep(pattern, path)`.
+
 # Turn budget discipline
 
 - You have a finite turn budget. Spend no more than 30% on exploration before producing a first draft of the required artifact.

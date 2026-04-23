@@ -7,7 +7,13 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "bash",
-            "description": "Run a bash command in the task working directory. Use for compiling, running tests, listing files, etc.",
+            "description": (
+                "Run a bash command in the task working directory. Use for "
+                "compiling, running tests, listing files, and executing "
+                "scripts already present. For writing substantial code, "
+                "prefer write_file; for short Python snippets, prefer python. "
+                "Avoid embedding multi-line programs in heredocs."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -17,6 +23,76 @@ TOOL_SCHEMAS = [
                     }
                 },
                 "required": ["cmd"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "write_file",
+            "description": (
+                "Write content verbatim to a file (overwriting if it exists). "
+                "Creates parent directories. Use this to land program source "
+                "code, configuration files, or multi-line text on disk, then "
+                "run it with bash. Preferred over bash heredocs for anything "
+                "longer than a few lines."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "File path (absolute or relative to cwd).",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Exact file content. No escaping required.",
+                    },
+                },
+                "required": ["path", "content"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "python",
+            "description": (
+                "Run a Python 3 program given as a string. Use for short "
+                "computations, data inspection, and one-off scripts. "
+                "For programs longer than ~30 lines, prefer write_file then "
+                "bash so the code is on disk and debuggable."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "Python 3 source code to execute.",
+                    }
+                },
+                "required": ["code"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "r",
+            "description": (
+                "Run an R program given as a string via Rscript. Use for "
+                "statistical computations. For programs longer than ~30 lines, "
+                "prefer write_file then bash."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "R source code to execute.",
+                    }
+                },
+                "required": ["code"],
             },
         },
     },
@@ -173,11 +249,70 @@ async def _grep(args: dict, environment, cwd: str) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
+async def _write_file(args: dict, environment, cwd: str) -> dict:
+    """Write content verbatim to path, creating parent dirs. Overwrites.
+
+    Uses base64 over stdin so arbitrary bytes (quotes, newlines, braces) are
+    preserved through the shell without escaping concerns.
+    """
+    import base64
+    try:
+        path = args["path"]
+        content = args.get("content", "") or ""
+        b64 = base64.b64encode(content.encode("utf-8")).decode("ascii")
+        # mkdir -p of the parent dir (portable); then decode into target
+        cmd = f"mkdir -p \"$(dirname -- {path!r})\" && printf %s '{b64}' | base64 -d > {path!r}"
+        result = await environment.exec(cmd, cwd=cwd, timeout_sec=30)
+        if result.return_code != 0:
+            return {"error": f"write_file failed: {result.stderr}", "returncode": result.return_code}
+        return {"ok": True, "path": path, "bytes": len(content.encode("utf-8"))}
+    except Exception as e:
+        return {"error": str(e), "returncode": -1}
+
+
+async def _python(args: dict, environment, cwd: str) -> dict:
+    """Execute Python 3 code via stdin. Avoids shell-escaping concerns."""
+    import base64
+    try:
+        code = args.get("code", "") or ""
+        b64 = base64.b64encode(code.encode("utf-8")).decode("ascii")
+        cmd = f"printf %s '{b64}' | base64 -d | python3"
+        result = await environment.exec(cmd, cwd=cwd, timeout_sec=60)
+        return {
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "returncode": result.return_code,
+        }
+    except Exception as e:
+        return {"error": str(e), "returncode": -1}
+
+
+async def _r(args: dict, environment, cwd: str) -> dict:
+    """Execute R code via Rscript stdin."""
+    import base64
+    try:
+        code = args.get("code", "") or ""
+        b64 = base64.b64encode(code.encode("utf-8")).decode("ascii")
+        # Rscript reads from stdin with "-" when given no script path
+        cmd = f"printf %s '{b64}' | base64 -d | Rscript -"
+        result = await environment.exec(cmd, cwd=cwd, timeout_sec=60)
+        return {
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "returncode": result.return_code,
+        }
+    except Exception as e:
+        return {"error": str(e), "returncode": -1}
+
+
 _TOOLS = {
     "bash": _bash,
     "file_view": _file_view,
     "file_edit": _file_edit,
     "grep": _grep,
+    "write_file": _write_file,
+    "python": _python,
+    "r": _r,
 }
 
 async def execute(name: str, args: dict, environment, cwd: str) -> dict:

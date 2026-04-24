@@ -1,0 +1,42 @@
+{
+    "id": "faed916e-4592-4986-b044-95e030eaf983",
+    "started_at": "2026-04-24T17:05:57.865089",
+    "finished_at": "2026-04-24T18:02:55.334795",
+    "n_total_trials": 9,
+    "stats": {
+        "n_trials": 9,
+        "n_errors": 0,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 9,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "mean": 0.6666666666666666
+                    }
+                ],
+                "pass_at_k": {
+                    "2": 0.888888888888889
+                },
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "openssl-selfsigned-cert__PNU6sUk",
+                            "sanitize-git-repo__MFY2Fy2",
+                            "sanitize-git-repo__MihaUft"
+                        ],
+                        "1.0": [
+                            "fix-git__3nBpfPW",
+                            "openssl-selfsigned-cert__poj95kh",
+                            "fix-git__CBZwtUo",
+                            "sanitize-git-repo__WutmqvM",
+                            "openssl-selfsigned-cert__yEtvtXW",
+                            "fix-git__amGdiyo"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        }
+    }
+}

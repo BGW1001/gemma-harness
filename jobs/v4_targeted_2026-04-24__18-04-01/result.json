@@ -1,0 +1,37 @@
+{
+    "id": "cfc89439-9eae-45a0-94f1-549b02a4ec9a",
+    "started_at": "2026-04-24T18:04:06.976625",
+    "finished_at": "2026-04-24T20:48:08.511369",
+    "n_total_trials": 6,
+    "stats": {
+        "n_trials": 6,
+        "n_errors": 0,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 6,
+                "n_errors": 0,
+                "metrics": [
+                    {
+                        "mean": 0.16666666666666666
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "path-tracing__z4f2m6h",
+                            "dna-insert__KfaWiWw",
+                            "git-multibranch__xxKgPrJ",
+                            "sparql-university__Rpvp5HH",
+                            "query-optimize__SuAeP22"
+                        ],
+                        "1.0": [
+                            "bn-fit-modify__wkS6bBR"
+                        ]
+                    }
+                },
+                "exception_stats": {}
+            }
+        }
+    }
+}

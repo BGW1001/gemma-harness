@@ -194,6 +194,8 @@ async def run_agent(task, environment, cwd, config):
         # emits unterminated strings in function.arguments), inject a synthetic
         # tool result explaining the parse error and let the model self-correct
         # on the next turn, rather than crashing the trial.
+        done_called = False
+        done_summary = ""
         for tc in (msg.tool_calls or []):
             try:
                 args = json.loads(tc.function.arguments)
@@ -214,6 +216,22 @@ async def run_agent(task, environment, cwd, config):
                 "tool_call_id": tc.id,
                 "content": json.dumps(result),
             })
+            # Special-case the done() tool: after executing it, terminate the
+            # loop. The run ends with the verifier check on whatever state the
+            # trial container is in.
+            if tc.function.name == "done":
+                done_called = True
+                done_summary = str(args.get("summary", ""))[:500]
+
+        if done_called:
+            return {
+                "status": "done_explicit",
+                "turns": turn,
+                "trace": messages,
+                "drift_events": drift_events,
+                "repair_attempts": repair_attempts,
+                "done_summary": done_summary,
+            }
 
     return {
         "status": "turn_limit",

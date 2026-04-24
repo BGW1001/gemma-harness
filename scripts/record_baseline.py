@@ -65,6 +65,8 @@ def tag_failure(reward: float, turns: int, max_turns: int, trace: list, status: 
         return "server_tool_parse_error"
     if status == "server_bad_request":
         return "server_bad_request"
+    if status == "done_explicit":
+        return "done_no_pass"  # model called done() but reward=0
     if turns >= max_turns - 1:
         return "turn_exhaustion"
     # Heuristic for graceful giveup: last assistant message has long content + no tool call.

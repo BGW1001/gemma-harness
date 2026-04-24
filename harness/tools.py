@@ -99,6 +99,111 @@ TOOL_SCHEMAS = [
     {
         "type": "function",
         "function": {
+            "name": "read_file_range",
+            "description": (
+                "Read a specific line range of a file. Prefer this over "
+                "file_view on files larger than ~500 lines to avoid wasting "
+                "context. If end is omitted, reads start..start+200."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path."},
+                    "start": {"type": "integer", "description": "Start line (1-indexed)."},
+                    "end": {"type": "integer", "description": "End line (inclusive). Optional; defaults to start+200."},
+                },
+                "required": ["path", "start"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_files",
+            "description": (
+                "List files in a directory matching an optional glob. Returns a "
+                "structured list of files and subdirectories. Prefer this over "
+                "`bash ls` for structured output."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Directory path. Defaults to '.'."},
+                    "glob": {"type": "string", "description": "Glob pattern, e.g. '*.py'. Defaults to '*'."},
+                    "recursive": {"type": "boolean", "description": "If true, recurse into subdirectories. Defaults to false."},
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "apt_install",
+            "description": (
+                "Install system packages via apt-get. Runs `apt-get update` once "
+                "per trial (if update=true) and then installs packages with "
+                "noninteractive frontend. Preferred over bash `apt-get install` "
+                "to standardize the install pattern."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "packages": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Package names to install.",
+                    },
+                    "update": {"type": "boolean", "description": "Run apt-get update first. Defaults to true."},
+                },
+                "required": ["packages"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "apply_patch",
+            "description": (
+                "Apply a unified diff to a file. Use for multi-hunk edits where "
+                "file_edit's unique-string matching fails. The diff must be in "
+                "standard unified format with 3 lines of context."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "File path to patch."},
+                    "diff": {"type": "string", "description": "Unified diff content."},
+                },
+                "required": ["path", "diff"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "done",
+            "description": (
+                "Signal that the task is complete. Provide a one-line summary "
+                "of what you verified (not what you built). The run ends "
+                "immediately after this tool call. Use when your artifacts are "
+                "in place AND you have verified them."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "summary": {
+                        "type": "string",
+                        "description": "One-line summary of what was verified.",
+                    }
+                },
+                "required": ["summary"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "file_view",
             "description": "Read and return the full contents of a file.",
             "parameters": {
@@ -305,6 +410,113 @@ async def _r(args: dict, environment, cwd: str) -> dict:
         return {"error": str(e), "returncode": -1}
 
 
+async def _read_file_range(args: dict, environment, cwd: str) -> dict:
+    """Read a specific line range of a file."""
+    try:
+        path = args["path"]
+        start = int(args.get("start", 1))
+        end = args.get("end")
+        if end is None:
+            end = start + 200
+        else:
+            end = int(end)
+        # Use sed to extract the range
+        result = await environment.exec(f"sed -n '{start},{end}p' {path}", cwd=cwd, timeout_sec=15)
+        if result.return_code != 0:
+            return {"error": f"read_file_range failed: {result.stderr}", "returncode": result.return_code}
+        # Also get total line count for reference
+        wc = await environment.exec(f"wc -l < {path}", cwd=cwd, timeout_sec=5)
+        total = int((wc.stdout or "0").strip()) if wc.return_code == 0 else None
+        return {
+            "content": result.stdout,
+            "range": [start, end],
+            "total_lines": total,
+        }
+    except Exception as e:
+        return {"error": str(e), "returncode": -1}
+
+
+async def _list_files(args: dict, environment, cwd: str) -> dict:
+    """List files in a directory matching a glob."""
+    try:
+        path = args.get("path", ".")
+        glob_pat = args.get("glob", "*")
+        recursive = bool(args.get("recursive", False))
+        if recursive:
+            cmd = f"find {path} -name '{glob_pat}' -printf '%y %p\\n' 2>/dev/null | head -200"
+        else:
+            cmd = f"find {path} -maxdepth 1 -name '{glob_pat}' -printf '%y %p\\n' 2>/dev/null | head -200"
+        result = await environment.exec(cmd, cwd=cwd, timeout_sec=15)
+        files = []
+        dirs = []
+        for line in (result.stdout or "").splitlines():
+            parts = line.split(" ", 1)
+            if len(parts) != 2:
+                continue
+            kind, p = parts
+            if kind == "f":
+                files.append(p)
+            elif kind == "d":
+                dirs.append(p)
+        return {"files": files, "dirs": dirs, "truncated": len(files) + len(dirs) >= 200}
+    except Exception as e:
+        return {"error": str(e), "returncode": -1}
+
+
+async def _apt_install(args: dict, environment, cwd: str) -> dict:
+    """Install packages via apt-get."""
+    try:
+        packages = args.get("packages", [])
+        if not packages:
+            return {"error": "no packages specified"}
+        update = bool(args.get("update", True))
+        pkg_str = " ".join(packages)
+        env_prefix = "DEBIAN_FRONTEND=noninteractive"
+        if update:
+            cmd = f"{env_prefix} apt-get update -qq && {env_prefix} apt-get install -y -qq {pkg_str}"
+        else:
+            cmd = f"{env_prefix} apt-get install -y -qq {pkg_str}"
+        result = await environment.exec(cmd, cwd=cwd, timeout_sec=180)
+        return {
+            "ok": result.return_code == 0,
+            "installed": packages if result.return_code == 0 else [],
+            "returncode": result.return_code,
+            "stderr": (result.stderr or "")[:500],
+        }
+    except Exception as e:
+        return {"error": str(e), "returncode": -1}
+
+
+async def _apply_patch(args: dict, environment, cwd: str) -> dict:
+    """Apply a unified diff to a file via `patch -p0`."""
+    import base64
+    try:
+        path = args["path"]
+        diff = args.get("diff", "") or ""
+        b64 = base64.b64encode(diff.encode("utf-8")).decode("ascii")
+        # Write diff to a temp file, run patch
+        cmd = (
+            f"TMPDIFF=$(mktemp); "
+            f"printf %s '{b64}' | base64 -d > $TMPDIFF; "
+            f"patch -p0 {path!r} < $TMPDIFF 2>&1; RC=$?; "
+            f"rm -f $TMPDIFF; exit $RC"
+        )
+        result = await environment.exec(cmd, cwd=cwd, timeout_sec=30)
+        return {
+            "ok": result.return_code == 0,
+            "returncode": result.return_code,
+            "output": (result.stdout or "")[:500],
+            "stderr": (result.stderr or "")[:500],
+        }
+    except Exception as e:
+        return {"error": str(e), "returncode": -1}
+
+
+async def _done(args: dict, environment, cwd: str) -> dict:
+    """Signal task completion. The harness special-cases this to terminate."""
+    return {"ok": True, "summary": args.get("summary", ""), "terminated_by": "done"}
+
+
 _TOOLS = {
     "bash": _bash,
     "file_view": _file_view,
@@ -313,6 +525,11 @@ _TOOLS = {
     "write_file": _write_file,
     "python": _python,
     "r": _r,
+    "read_file_range": _read_file_range,
+    "list_files": _list_files,
+    "apt_install": _apt_install,
+    "apply_patch": _apply_patch,
+    "done": _done,
 }
 
 async def execute(name: str, args: dict, environment, cwd: str) -> dict:

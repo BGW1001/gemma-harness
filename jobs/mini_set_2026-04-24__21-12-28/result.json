@@ -1,0 +1,55 @@
+{
+    "id": "9c051c09-73b6-4e93-9b23-2b8c99d08443",
+    "started_at": "2026-04-24T21:12:33.447611",
+    "finished_at": "2026-04-25T04:25:54.201462",
+    "n_total_trials": 20,
+    "stats": {
+        "n_trials": 20,
+        "n_errors": 1,
+        "evals": {
+            "gemma-harness__terminal-bench/terminal-bench-2": {
+                "n_trials": 20,
+                "n_errors": 1,
+                "metrics": [
+                    {
+                        "mean": 0.5
+                    }
+                ],
+                "pass_at_k": {},
+                "reward_stats": {
+                    "reward": {
+                        "0.0": [
+                            "circuit-fibsqrt__SuH7tym",
+                            "build-pov-ray__Kj3qytC",
+                            "distribution-search__zJvtqgn",
+                            "dna-assembly__YWbgH7y",
+                            "prove-plus-comm__f8PMQtW",
+                            "chess-best-move__VSd6Y47",
+                            "model-extraction-relu-logits__KXssNW8",
+                            "largest-eigenval__oqgj9RG",
+                            "mteb-retrieve__bMZd6nx",
+                            "code-from-image__tYMrmdD"
+                        ],
+                        "1.0": [
+                            "openssl-selfsigned-cert__QyBFKRQ",
+                            "cancel-async-tasks__susb7wM",
+                            "git-leak-recovery__hvGcAV2",
+                            "headless-terminal__BMpHFgZ",
+                            "constraints-scheduling__igBz5nY",
+                            "pytorch-model-recovery__ud3MxCY",
+                            "multi-source-data-merger__PXX846b",
+                            "count-dataset-tokens__Nf3BLNT",
+                            "pypi-server__9Z3xJV8",
+                            "modernize-scientific-stack__nCHMYzW"
+                        ]
+                    }
+                },
+                "exception_stats": {
+                    "AgentTimeoutError": [
+                        "chess-best-move__VSd6Y47"
+                    ]
+                }
+            }
+        }
+    }
+}
